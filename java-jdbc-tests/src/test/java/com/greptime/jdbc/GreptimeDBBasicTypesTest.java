@@ -17,6 +17,8 @@ package com.greptime.jdbc;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 
@@ -28,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class GreptimeDBBasicTypesTest {
 
+    private static final Logger log = LoggerFactory.getLogger(GreptimeDBBasicTypesTest.class);
     private Connection conn;
     private String driver;
 
@@ -124,11 +127,15 @@ public class GreptimeDBBasicTypesTest {
     @ParameterizedTest
     @ValueSource(strings = {"mysql", "postgresql"})
     void testCrudOperations(String driverType) throws SQLException {
+        log.info("Starting CRUD test for driver: {}", driverType);
         connect(driverType);
         String table = tableName();
 
         try {
+            log.info("[{}] Dropping table if exists: {}", driver, table);
             dropTable(table);
+
+            log.info("[{}] Creating table: {}", driver, table);
             createTable(table,
                 "ts TIMESTAMP TIME INDEX, " +
                 "row_id STRING PRIMARY KEY, " +
@@ -143,6 +150,7 @@ public class GreptimeDBBasicTypesTest {
             );
 
             // INSERT with SQL literal
+            log.info("[{}] Inserting row with SQL literal", driver);
             String literalInsert = String.format(
                 "INSERT INTO %s (ts, row_id, int_col, double_col, float_col, string_col, date_col, timestamp_col, bool_col, binary_col) " +
                 "VALUES ('2024-11-24 10:00:00', 'row1', 42, 3.14159, 2.718, 'Hello GreptimeDB! 你好🚀', '2024-01-15', '2024-11-24 10:00:00', true, X'0102030405FFFE')",
@@ -153,6 +161,7 @@ public class GreptimeDBBasicTypesTest {
             }
 
             // INSERT with PreparedStatement
+            log.info("[{}] Inserting row with PreparedStatement", driver);
             String preparedInsert = String.format(
                 "INSERT INTO %s (ts, row_id, int_col, double_col, float_col, string_col, date_col, timestamp_col, bool_col, binary_col) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -178,6 +187,7 @@ public class GreptimeDBBasicTypesTest {
             }
 
             // SELECT and verify
+            log.info("[{}] Selecting and verifying inserted rows", driver);
             try (Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery("SELECT * FROM " + table + " ORDER BY row_id")) {
 
@@ -205,34 +215,45 @@ public class GreptimeDBBasicTypesTest {
                 assertFalse(rs.next());
             }
 
-            // UPDATE (insert with later timestamp)
-            Timestamp updateTs = Timestamp.valueOf("2024-11-24 12:00:00");
+            // UPDATE by inserting with SAME primary key + SAME time index
+            // This should overwrite the first row (row1 at 10:00:00)
+            log.info("[{}] Updating row by inserting with same primary key + time index", driver);
+            Timestamp sameTs = Timestamp.valueOf("2024-11-24 10:00:00");
             try (PreparedStatement ps = conn.prepareStatement(preparedInsert)) {
-                ps.setTimestamp(1, updateTs);
-                ps.setString(2, "row1");
-                ps.setInt(3, 100);
-                ps.setDouble(4, 9.999);
+                ps.setTimestamp(1, sameTs);  // Same time index as row1
+                ps.setString(2, "row1");     // Same primary key
+                ps.setInt(3, 100);           // Updated value
+                ps.setDouble(4, 9.999);      // Updated value
                 ps.setFloat(5, 1.234f);
                 ps.setString(6, "Updated value");
                 ps.setDate(7, Date.valueOf("2024-12-25"));
-                ps.setTimestamp(8, updateTs);
+                ps.setTimestamp(8, sameTs);
                 ps.setBoolean(9, false);
                 ps.setBytes(10, new byte[]{0x11, 0x22});
                 execute(ps);
             }
 
-            // Verify update
+            // Verify the row was overwritten (not added)
+            log.info("[{}] Verifying row was overwritten (not added)", driver);
             try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery(
-                     "SELECT * FROM " + table + " WHERE row_id = 'row1' ORDER BY ts DESC LIMIT 1")) {
+                 ResultSet rs = stmt.executeQuery("SELECT * FROM " + table + " ORDER BY row_id, ts")) {
+
+                // Should only have 2 rows total (row1 was overwritten, not added)
                 assertTrue(rs.next());
-                assertEquals(100, rs.getInt("int_col"));
+                assertEquals("row1", rs.getString("row_id"));
+                assertEquals(100, rs.getInt("int_col"), "row1 should be updated");
                 assertEquals(9.999, rs.getDouble("double_col"), 0.001);
                 assertEquals("Updated value", rs.getString("string_col"));
-                assertFalse(rs.getBoolean("bool_col"));
+
+                assertTrue(rs.next());
+                assertEquals("row2", rs.getString("row_id"));
+                assertEquals(999, rs.getInt("int_col"));
+
+                assertFalse(rs.next(), "Should have exactly 2 rows (row1 overwritten, not added)");
             }
 
             // SELECT with WHERE
+            log.info("[{}] Testing SELECT with WHERE clause", driver);
             try (PreparedStatement ps = conn.prepareStatement(
                     "SELECT * FROM " + table + " WHERE int_col > ? ORDER BY row_id")) {
                 ps.setInt(1, 50);
@@ -244,14 +265,17 @@ public class GreptimeDBBasicTypesTest {
             }
 
             // DELETE
+            log.info("[{}] Dropping table", driver);
             dropTable(table);
             try (Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery("SHOW TABLES LIKE '" + table + "'")) {
                 assertFalse(rs.next());
             }
 
+            log.info("[{}] CRUD test completed successfully", driver);
+
         } catch (SQLException e) {
-            System.err.println("[" + driver + "] Test failed: " + e.getMessage());
+            log.error("[{}] Test failed: {}", driver, e.getMessage(), e);
             throw e;
         }
     }
