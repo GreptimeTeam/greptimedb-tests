@@ -8,7 +8,7 @@ Multi-language integration tests for GreptimeDB, validating compatibility with d
 greptimedb-tests/
 ├── run_tests.sh           # Master test runner
 ├── create_database.py     # Database creation (mysql-connector-python)
-├── java-tests/            # Java JDBC tests (MySQL + PostgreSQL + + gRPC ingester)
+├── java-tests/            # Java tests (MySQL JDBC + PostgreSQL JDBC + gRPC ingester)
 ├── python-tests/          # Python tests (mysql-connector + psycopg2)
 ├── go-tests/              # Go tests (MySQL + PostgreSQL + gRPC ingester)
 └── .github/workflows/     # CI workflows
@@ -60,8 +60,8 @@ cd go-tests && ./run_tests.sh
 ## Test Suites
 
 ### Java Tests (`java-tests/`)
-- **Drivers**: MySQL JDBC, PostgreSQL JDBC
-- **Tests**: CRUD operations, timezone handling, batch inserts
+- **Protocols**: MySQL JDBC, PostgreSQL JDBC, gRPC Ingester
+- **Tests**: CRUD operations, timezone handling, batch inserts, gRPC ingester operations
 - **Coverage**: All GreptimeDB data types
 - **Docs**: [java-tests/README.md](java-tests/README.md)
 
