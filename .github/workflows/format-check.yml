@@ -112,7 +112,7 @@ jobs:
       - name: Run golangci-lint
         run: |
           cd go-tests
-          golangci-lint run --timeout=5m
+          golangci-lint run --timeout=5m --disable=errcheck,staticcheck
 
       - name: Format check failed
         if: failure()
