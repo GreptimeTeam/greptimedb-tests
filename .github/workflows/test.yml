@@ -22,6 +22,17 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      - name: Set up MySQL Client
+        uses: shogo82148/actions-setup-mysql@v1
+        with:
+          mysql-version: '8.4.5'
+          auto-start: false
+
+      - name: Verify MySQL client version
+        run: |
+          mysql --version
+          which mysql
+
       - name: Create data directory
         run: |
           mkdir -p greptimedb_data

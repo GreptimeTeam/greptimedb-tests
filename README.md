@@ -17,7 +17,21 @@ greptimedb-tests/
 
 ### Prerequisites
 - GreptimeDB instance running on localhost (default ports)
+- MySQL client (version 8.x recommended) for database creation
 - Test suite specific dependencies (see individual test suite READMEs)
+
+**Install MySQL client:**
+```bash
+# macOS
+brew install mysql-client
+
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install mysql-client
+
+# Verify installation
+mysql --version
+```
 
 ### Start GreptimeDB
 
@@ -111,17 +125,22 @@ This repository includes two GitHub Actions workflows:
 ### 2. Integration Tests (`.github/workflows/test.yml`)
 - **Trigger**: Pull requests and pushes to main/master
 - **Purpose**: Run full integration test suite
+- **Dependencies**:
+  - JDK 17 (Temurin distribution)
+  - MySQL Client 8.4.5 (for database creation)
+  - Docker (for GreptimeDB container)
 - **Steps**:
-  1. Start GreptimeDB using Docker (`greptime/greptimedb:v1.0.0-beta.1`)
-  2. Wait for GreptimeDB health check to pass (up to 120 seconds)
-  3. Execute `./run_tests.sh` to run all test suites
-  4. Collect container logs on failure
-  5. Upload test logs on failure
-  6. Clean up container resources
+  1. Set up JDK 17 and MySQL client
+  2. Start GreptimeDB using Docker (`greptime/greptimedb:v1.0.0-beta.1`)
+  3. Wait for GreptimeDB health check to pass (up to 120 seconds)
+  4. Execute `./run_tests.sh` to run all test suites
+  5. Collect container logs on failure
+  6. Upload test logs on failure
+  7. Clean up container resources
 - **Ports**: HTTP (4000), gRPC (4001), MySQL (4002), PostgreSQL (4003)
 - **Data**: Persisted to `greptimedb_data/` directory
 
-Both workflows use JDK 17 and cache Maven dependencies for faster builds.
+Both workflows cache Maven dependencies for faster builds.
 
 ## CI Integration (External)
 
