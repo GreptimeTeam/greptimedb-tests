@@ -22,11 +22,17 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Install PyMySQL
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
+      - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip
-          pip install pymysql
+          pip install pymysql psycopg2-binary
           python3 -c "import pymysql; print(f'PyMySQL {pymysql.__version__} installed')"
+          python3 -c "import psycopg2; print(f'psycopg2 {psycopg2.__version__} installed')"
 
       - name: Create data directory
         run: |
@@ -103,6 +109,7 @@ jobs:
           name: test-logs
           path: |
             java-tests/target/surefire-reports/
+            python-tests/.pytest_cache/
             **/test-output/
           retention-days: 7
 
