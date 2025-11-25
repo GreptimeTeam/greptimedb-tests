@@ -1,154 +1,121 @@
-# GreptimeDB Tests
+# GreptimeDB Integration Tests
 
-Multi-language integration tests for GreptimeDB. This repository contains test suites for various programming languages and SDKs to validate GreptimeDB's compatibility with different client drivers and protocols.
+Multi-language integration tests for GreptimeDB, validating compatibility with different client drivers and protocols.
 
 ## Project Structure
 
 ```
 greptimedb-tests/
-├── run_tests.sh              # Master test runner (runs all test suites)
-├── java-tests/               # Java integration tests (JDBC + gRPC)
-│   ├── run_tests.sh
-│   └── src/test/java/
-└── [future test suites]      # Additional test suites for other languages
+├── run_tests.sh           # Master test runner
+├── create_database.py     # Database creation (mysql-connector-python)
+├── java-tests/            # Java JDBC tests (MySQL + PostgreSQL)
+├── python-tests/          # Python tests (mysql-connector + psycopg2)
+└── .github/workflows/     # CI workflows
 ```
 
 ## Quick Start
 
 ### Prerequisites
-- GreptimeDB instance running on localhost (default ports)
-- Python 3 with mysql-connector-python (for database creation)
-- Test suite specific dependencies (see individual test suite READMEs)
 
-**Install mysql-connector-python:**
+- GreptimeDB running on default ports (MySQL: 4002, PostgreSQL: 4003)
+- Python 3.8+ with `mysql-connector-python` (for database creation)
+- Java 11+ and Maven 3.6+ (for Java tests)
+
 ```bash
 pip install mysql-connector-python
-# or
-pip3 install mysql-connector-python
 ```
 
 ### Start GreptimeDB
 
-**Option 1: Using Cargo (from source)**
+**Without authentication:**
 ```bash
 cargo run --bin greptime -- standalone start
 ```
 
-**Option 2: Using Docker**
+**With authentication (matches CI):**
 ```bash
-mkdir -p greptimedb_data
-docker run -d \
-  -p 127.0.0.1:4000-4003:4000-4003 \
-  -v "$(pwd)/greptimedb_data:/greptimedb_data" \
-  --name greptime --rm \
-  greptime/greptimedb:v1.0.0-beta.1 standalone start \
-  --http-addr 0.0.0.0:4000 \
-  --rpc-addr 0.0.0.0:4001 \
-  --mysql-addr 0.0.0.0:4002 \
-  --postgres-addr 0.0.0.0:4003
+cargo run --bin greptime -- standalone start \
+  --user-provider=static_user_provider:cmd:greptime_user=greptime_pwd
 
-# Wait for startup
-sleep 10
-
-# Check health
-curl http://localhost:4000/health
-
-# Stop when done
-docker stop greptime
+export GREPTIME_USERNAME=greptime_user
+export GREPTIME_PASSWORD=greptime_pwd
 ```
 
-### Run All Tests
+### Run Tests
+
+**All test suites:**
 ```bash
 ./run_tests.sh
 ```
 
-This will automatically discover and run all test suites in the repository.
-
-### Run Individual Test Suite
+**Individual suite:**
 ```bash
-cd java-tests
-./run_tests.sh
+cd java-tests && ./run_tests.sh
+cd python-tests && ./run_tests.sh
 ```
 
 ## Test Suites
 
-### Java Tests
-- **Location**: `java-tests/`
-- **Description**: JDBC integration tests (MySQL and PostgreSQL protocols). gRPC tests planned.
-- **Requirements**: Java 11+, Maven 3.6+
-- **Documentation**: See [java-tests/README.md](java-tests/README.md)
+### Java Tests (`java-tests/`)
+- **Drivers**: MySQL JDBC, PostgreSQL JDBC
+- **Tests**: CRUD operations, timezone handling, batch inserts
+- **Coverage**: All GreptimeDB data types
+- **Docs**: [java-tests/README.md](java-tests/README.md)
 
-## Architecture
-
-### Database Isolation
-Each test suite uses a separate database named after its directory:
-- `java-tests/` → database `java_tests`
-
-The root `run_tests.sh` creates the database before running each test suite.
-
-### Test Discovery
-The root test runner automatically discovers test suites by looking for:
-- Subdirectories containing `run_tests.sh` or `run.sh`
-- Executes each suite in sequence
-- Reports aggregated results
+### Python Tests (`python-tests/`)
+- **Drivers**: mysql-connector-python, psycopg2
+- **Tests**: CRUD operations, timezone handling, batch inserts
+- **Framework**: pytest with parameterized tests
+- **Docs**: [python-tests/README.md](python-tests/README.md)
 
 ## Environment Variables
 
-**Common:**
-- `DB_NAME` - Database name (default: derived from directory name)
-- `GREPTIME_USERNAME` / `GREPTIME_PASSWORD` - Authentication credentials (default: empty)
+**Authentication:**
+- `GREPTIME_USERNAME` / `GREPTIME_PASSWORD` - Credentials (default: empty)
+
+**Database:**
+- `DB_NAME` - Database name (default: auto-derived)
 - `MYSQL_HOST` / `MYSQL_PORT` - MySQL connection (default: `127.0.0.1:4002`)
 - `POSTGRES_HOST` / `POSTGRES_PORT` - PostgreSQL connection (default: `127.0.0.1:4003`)
 
-**Optional overrides:**
-- `MYSQL_URL` / `POSTGRES_URL` - Complete JDBC URLs (override host/port/db)
+**Optional:**
+- `MYSQL_URL` / `POSTGRES_URL` - Complete connection URLs
 
-## GitHub Actions CI
+## Architecture
 
-### Code Format Check
-- Validates Java code formatting with Spotless + Google Java Format
-- Runs `mvn spotless:check` on Java test files
+**Database Isolation:**
+Each test suite uses a separate database named after its directory:
+- `java-tests/` → `java_tests`
+- `python-tests/` → `python_tests`
 
-### Integration Tests
-- Starts GreptimeDB in Docker with authentication (`greptime_user`/`greptime_pwd`)
-- Runs all test suites via `./run_tests.sh`
-- Uploads logs on failure
-- Caches Maven dependencies for faster builds
+**Test Discovery:**
+Root `run_tests.sh` automatically discovers and executes all test suites (directories with `run_tests.sh` or `run.sh`).
 
-## External CI Integration
+**Database Creation:**
+`create_database.py` creates databases before running each suite. Note: Must connect to `public` database first (GreptimeDB requirement).
 
-Can be used in GreptimeDB main repository CI:
-1. Build and start GreptimeDB
-2. Run `./run_tests.sh` from this repo
-3. Collect logs on failure
+## CI Integration
 
-## Adding New Test Suites
+### GitHub Actions
+- **Format Check**: Validates Java code with Spotless + Google Java Format
+- **Integration Tests**: Runs all suites with authentication in Docker
 
-To add a test suite for a new language or SDK:
+### External CI
+```bash
+# In GreptimeDB main repo CI:
+export GREPTIME_USERNAME=user
+export GREPTIME_PASSWORD=pass
+./run_tests.sh
+```
 
-1. **Create a subdirectory** with a descriptive name:
-   ```bash
-   mkdir python-sdk-tests
-   cd python-sdk-tests
-   ```
+## Adding Test Suites
 
-2. **Create a `run_tests.sh`** script that:
-   - Uses `DB_NAME` env var (set by root `run_tests.sh`)
-   - Returns exit code 0 on success, non-zero on failure
-   - Assumes database already exists
+1. Create directory: `mkdir new-tests && cd new-tests`
+2. Create `run_tests.sh` that uses `$DB_NAME` env var
+3. Make executable: `chmod +x run_tests.sh`
+4. Test: `./run_tests.sh` (root runner auto-discovers)
 
-3. **Make it executable**:
-   ```bash
-   chmod +x run_tests.sh
-   ```
-
-4. **Test it**:
-   ```bash
-   cd ..
-   ./run_tests.sh  # Root runner will discover it automatically
-   ```
-
-For more details, see [CLAUDE.md](CLAUDE.md).
+See [CLAUDE.md](CLAUDE.md) for detailed guidance.
 
 ## License
 
