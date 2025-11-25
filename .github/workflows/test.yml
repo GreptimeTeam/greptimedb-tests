@@ -24,15 +24,20 @@ jobs:
 
       - name: Install MySQL Client
         run: |
-          # Add MySQL APT repository for specific version support
-          wget https://dev.mysql.com/get/mysql-apt-config_0.8.30-1_all.deb
-          sudo DEBIAN_FRONTEND=noninteractive dpkg -i mysql-apt-config_0.8.30-1_all.deb
+          # Import MySQL GPG key (fix expired key issue)
+          wget -qO - https://repo.mysql.com/RPM-GPG-KEY-mysql-2023 | \
+            sudo gpg --dearmor -o /usr/share/keyrings/mysql-archive-keyring.gpg
+
+          # Add MySQL APT repository
+          echo "deb [signed-by=/usr/share/keyrings/mysql-archive-keyring.gpg] http://repo.mysql.com/apt/ubuntu noble mysql-8.0" | \
+            sudo tee /etc/apt/sources.list.d/mysql.list
+
+          # Update package lists
           sudo apt-get update
 
-          # Install specific version or latest
-          # For specific version: sudo apt-get install -y mysql-client=8.0.39-1ubuntu22.04
-          # For latest 8.0: sudo apt-get install -y mysql-client
-          sudo apt-get install -y mysql-client=8.0.39-1ubuntu22.04
+          # Install specific MySQL client version
+          # Available versions: 8.0.35, 8.0.36, 8.0.37, 8.0.38, 8.0.39, 8.0.40, etc.
+          sudo apt-get install -y mysql-client=8.0.39-1ubuntu24.04
 
           # Verify installation
           mysql --version
