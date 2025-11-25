@@ -71,14 +71,18 @@ class GreptimeDBJdbcTest:
             if timezone:
                 connect_args["time_zone"] = timezone
 
-            logger.info(f"Connecting to MySQL: {host}:{port}/{db} (timezone={timezone})")
+            logger.info(
+                f"Connecting to MySQL: {host}:{port}/{db} (timezone={timezone})"
+            )
             self.conn = mysql.connector.connect(**connect_args)
 
         elif driver_type == "postgresql":
             url = self._get_postgres_url()
             host, port, db = self._parse_postgres_url(url)
 
-            logger.info(f"Connecting to PostgreSQL: {host}:{port}/{db} (timezone={timezone})")
+            logger.info(
+                f"Connecting to PostgreSQL: {host}:{port}/{db} (timezone={timezone})"
+            )
             self.conn = psycopg2.connect(
                 host=host, port=port, database=db, user=username, password=password
             )
@@ -165,6 +169,7 @@ class GreptimeDBJdbcTest:
         if ts.tzinfo is None:
             if self.driver == "mysql" and self.connection_timezone:
                 import pytz
+
                 try:
                     conn_tz = pytz.timezone(self.connection_timezone)
                     ts_with_tz = conn_tz.localize(ts)
@@ -180,7 +185,11 @@ class GreptimeDBJdbcTest:
 
     def get_cursor(self, prepared=False):
         """Get cursor. Use prepared=True for MySQL parameterized queries."""
-        return self.conn.cursor(prepared=True) if self.driver == "mysql" and prepared else self.conn.cursor()
+        return (
+            self.conn.cursor(prepared=True)
+            if self.driver == "mysql" and prepared
+            else self.conn.cursor()
+        )
 
     def parse_binary_result(self, value, driver):
         """Parse binary data. NOTE: PostgreSQL returns hex string format."""
