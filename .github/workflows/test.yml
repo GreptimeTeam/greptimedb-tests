@@ -5,6 +5,10 @@ on:
     branches: [ main, master ]
   push:
     branches: [ main, master ]
+  schedule:
+    # Run every Tuesday at 01:00 Beijing time (UTC+8)
+    # Monday 17:00 UTC = Tuesday 01:00 CST
+    - cron: '0 17 * * 1'
 
 jobs:
   test:
