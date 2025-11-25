@@ -77,7 +77,7 @@ func setupMySQLConn(t *testing.T) *sql.DB {
 	if username != "" && password != "" {
 		dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", username, password, host, port, database)
 	} else {
-		dsn = fmt.Sprintf("@tcp(%s:%s)/%s?parseTime=true", host, port, database)
+		dsn = fmt.Sprintf("tcp(%s:%s)/%s?parseTime=true", host, port, database)
 	}
 
 	db, err := sql.Open("mysql", dsn)
