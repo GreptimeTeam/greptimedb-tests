@@ -50,8 +50,10 @@ public class GreptimeDBJdbcTest {
   private void connect(String driverType, String timezone) throws SQLException {
     this.driver = driverType;
     String url = buildUrl(driverType, timezone);
+    String username = getEnv("GREPTIME_USERNAME", "");
+    String password = getEnv("GREPTIME_PASSWORD", "");
     log.info("Connecting to {} with URL: {}", driverType, url);
-    conn = DriverManager.getConnection(url, "", "");
+    conn = DriverManager.getConnection(url, username, password);
 
     if (driverType.equals("postgresql") && timezone != null) {
       try (Statement stmt = conn.createStatement()) {

@@ -17,14 +17,14 @@ greptimedb-tests/
 
 ### Prerequisites
 - GreptimeDB instance running on localhost (default ports)
-- Python 3 with PyMySQL (for database creation)
+- Python 3 with mysql-connector-python (for database creation)
 - Test suite specific dependencies (see individual test suite READMEs)
 
-**Install PyMySQL:**
+**Install mysql-connector-python:**
 ```bash
-pip install pymysql
+pip install mysql-connector-python
 # or
-pip3 install pymysql
+pip3 install mysql-connector-python
 ```
 
 ### Start GreptimeDB
@@ -94,58 +94,33 @@ The root test runner automatically discovers test suites by looking for:
 
 ## Environment Variables
 
-Test suites support flexible configuration through environment variables.
-
-**Common variables:**
+**Common:**
 - `DB_NAME` - Database name (default: derived from directory name)
+- `GREPTIME_USERNAME` / `GREPTIME_PASSWORD` - Authentication credentials (default: empty)
+- `MYSQL_HOST` / `MYSQL_PORT` - MySQL connection (default: `127.0.0.1:4002`)
+- `POSTGRES_HOST` / `POSTGRES_PORT` - PostgreSQL connection (default: `127.0.0.1:4003`)
 
-**Java tests specific:**
-- `MYSQL_URL` - MySQL JDBC URL (default: `jdbc:mysql://localhost:4002/{DB_NAME}`)
-- `POSTGRES_URL` - PostgreSQL JDBC URL (default: `jdbc:postgresql://localhost:4003/{DB_NAME}`)
-- `MYSQL_PORT` - MySQL protocol port (default: `4002`)
-- `POSTGRES_PORT` - PostgreSQL protocol port (default: `4003`)
-- `HTTP_PORT` - GreptimeDB HTTP API port (default: `4000`)
+**Optional overrides:**
+- `MYSQL_URL` / `POSTGRES_URL` - Complete JDBC URLs (override host/port/db)
 
 ## GitHub Actions CI
 
-This repository includes two GitHub Actions workflows:
+### Code Format Check
+- Validates Java code formatting with Spotless + Google Java Format
+- Runs `mvn spotless:check` on Java test files
 
-### 1. Code Format Check (`.github/workflows/format-check.yml`)
-- **Trigger**: Pull requests and pushes to main/master affecting Java files
-- **Purpose**: Validates code formatting using Spotless + Google Java Format
-- **Action**: Runs `mvn spotless:check` on Java tests
-- **Requirement**: All Java code must follow Google Java Format style
+### Integration Tests
+- Starts GreptimeDB in Docker with authentication (`greptime_user`/`greptime_pwd`)
+- Runs all test suites via `./run_tests.sh`
+- Uploads logs on failure
+- Caches Maven dependencies for faster builds
 
-### 2. Integration Tests (`.github/workflows/test.yml`)
-- **Trigger**: Pull requests and pushes to main/master
-- **Purpose**: Run full integration test suite
-- **Dependencies**:
-  - JDK 17 (Temurin distribution)
-  - Python 3 with PyMySQL (for database creation)
-  - Docker (for GreptimeDB container)
-- **Steps**:
-  1. Set up JDK 17 and install PyMySQL
-  2. Start GreptimeDB using Docker (`greptime/greptimedb:v1.0.0-beta.1`)
-  3. Wait for GreptimeDB health check to pass (up to 120 seconds)
-  4. Execute `./run_tests.sh` to run all test suites (uses `create_database.py`)
-  5. Collect container logs on failure
-  6. Upload test logs on failure
-  7. Clean up container resources
-- **Ports**: HTTP (4000), gRPC (4001), MySQL (4002), PostgreSQL (4003)
-- **Data**: Persisted to `greptimedb_data/` directory
+## External CI Integration
 
-Both workflows cache Maven dependencies for faster builds.
-
-## CI Integration (External)
-
-This repository is also designed to be checked out during CI runs in the main GreptimeDB repository:
-
-1. Checkout GreptimeDB main repository
-2. Checkout this test repository (greptimedb-tests)
-3. Build GreptimeDB binary
-4. Start GreptimeDB in standalone mode
-5. Run `./run_tests.sh` from this repository
-6. Stop GreptimeDB and upload logs on failure
+Can be used in GreptimeDB main repository CI:
+1. Build and start GreptimeDB
+2. Run `./run_tests.sh` from this repo
+3. Collect logs on failure
 
 ## Adding New Test Suites
 
