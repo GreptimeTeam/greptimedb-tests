@@ -134,7 +134,7 @@ def setup_opentelemetry():
 
     config = OtelTestConfig()
 
-    print(f"\nInitializing OpenTelemetry:")
+    print("\nInitializing OpenTelemetry:")
     print(f"  OTLP endpoint: {config.otlp_endpoint}")
     print(f"  MySQL: {config.mysql_host}:{config.mysql_port}/{config.db_name}")
     print(f"  Service name: {SERVICE_NAME}")
