@@ -20,8 +20,33 @@ greptimedb-tests/
 - Test suite specific dependencies (see individual test suite READMEs)
 
 ### Start GreptimeDB
+
+**Option 1: Using Cargo (from source)**
 ```bash
 cargo run --bin greptime -- standalone start
+```
+
+**Option 2: Using Docker**
+```bash
+mkdir -p greptimedb_data
+docker run -d \
+  -p 127.0.0.1:4000-4003:4000-4003 \
+  -v "$(pwd)/greptimedb_data:/greptimedb_data" \
+  --name greptime --rm \
+  greptime/greptimedb:v1.0.0-beta.1 standalone start \
+  --http-addr 0.0.0.0:4000 \
+  --rpc-addr 0.0.0.0:4001 \
+  --mysql-addr 0.0.0.0:4002 \
+  --postgres-addr 0.0.0.0:4003
+
+# Wait for startup
+sleep 10
+
+# Check health
+curl http://localhost:4000/health
+
+# Stop when done
+docker stop greptime
 ```
 
 ### Run All Tests
@@ -87,11 +112,14 @@ This repository includes two GitHub Actions workflows:
 - **Trigger**: Pull requests and pushes to main/master
 - **Purpose**: Run full integration test suite
 - **Steps**:
-  1. Start GreptimeDB using Docker (`greptime/greptimedb:latest`)
-  2. Wait for GreptimeDB health check to pass
+  1. Start GreptimeDB using Docker (`greptime/greptimedb:v1.0.0-beta.1`)
+  2. Wait for GreptimeDB health check to pass (up to 120 seconds)
   3. Execute `./run_tests.sh` to run all test suites
-  4. Upload test logs on failure
-- **Ports**: MySQL (4002), PostgreSQL (4003), HTTP (4000), gRPC (4001)
+  4. Collect container logs on failure
+  5. Upload test logs on failure
+  6. Clean up container resources
+- **Ports**: HTTP (4000), gRPC (4001), MySQL (4002), PostgreSQL (4003)
+- **Data**: Persisted to `greptimedb_data/` directory
 
 Both workflows use JDK 17 and cache Maven dependencies for faster builds.
 

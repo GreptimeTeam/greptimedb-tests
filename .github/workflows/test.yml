@@ -11,21 +11,6 @@ jobs:
     name: Run Integration Tests
     runs-on: ubuntu-latest
 
-    services:
-      greptimedb:
-        image: greptime/greptimedb:latest
-        ports:
-          - 4000:4000  # HTTP
-          - 4001:4001  # gRPC
-          - 4002:4002  # MySQL
-          - 4003:4003  # PostgreSQL
-        options: >-
-          --health-cmd "curl -f http://localhost:4000/health || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-          --health-start-period 30s
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,28 +22,55 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      - name: Create data directory
+        run: |
+          mkdir -p greptimedb_data
+
+      - name: Start GreptimeDB
+        run: |
+          docker run -d \
+            -p 127.0.0.1:4000-4003:4000-4003 \
+            -v "$(pwd)/greptimedb_data:/greptimedb_data" \
+            --name greptime \
+            greptime/greptimedb:v1.0.0-beta.1 standalone start \
+            --http-addr 0.0.0.0:4000 \
+            --rpc-addr 0.0.0.0:4001 \
+            --mysql-addr 0.0.0.0:4002 \
+            --postgres-addr 0.0.0.0:4003
+
+          echo "GreptimeDB container started"
+          docker ps
+
       - name: Wait for GreptimeDB to be ready
         run: |
           echo "Waiting for GreptimeDB to start..."
-          for i in {1..30}; do
-            if curl -f http://localhost:4000/health; then
+          for i in {1..60}; do
+            if curl -f http://localhost:4000/health 2>/dev/null; then
               echo "✅ GreptimeDB is ready!"
               break
             fi
-            echo "Waiting... ($i/30)"
+            echo "Waiting... ($i/60)"
             sleep 2
           done
 
           # Final health check
           if ! curl -f http://localhost:4000/health; then
             echo "❌ GreptimeDB failed to start"
+            echo "Container logs:"
+            docker logs greptime
             exit 1
           fi
 
-      - name: Check GreptimeDB ports
+      - name: Check GreptimeDB status
         run: |
-          echo "Checking GreptimeDB ports..."
-          netstat -tuln | grep -E ':(4000|4001|4002|4003)' || true
+          echo "=== Container Status ==="
+          docker ps -a
+          echo ""
+          echo "=== Port Bindings ==="
+          docker port greptime
+          echo ""
+          echo "=== Health Check ==="
+          curl -v http://localhost:4000/health
 
       - name: Run integration tests
         run: |
@@ -72,6 +84,12 @@ jobs:
           POSTGRES_PORT: 4003
           HTTP_PORT: 4000
 
+      - name: Collect GreptimeDB logs on failure
+        if: failure()
+        run: |
+          echo "=== GreptimeDB Container Logs ==="
+          docker logs greptime || true
+
       - name: Upload test logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -81,6 +99,12 @@ jobs:
             java-tests/target/surefire-reports/
             **/test-output/
           retention-days: 7
+
+      - name: Stop and remove GreptimeDB container
+        if: always()
+        run: |
+          docker stop greptime || true
+          docker rm greptime || true
 
       - name: Test summary
         if: always()
