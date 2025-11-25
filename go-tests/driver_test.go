@@ -27,8 +27,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestCrudOperations tests CRUD operations for both MySQL and PostgreSQL drivers.
-// Validates comprehensive CRUD operations on a single table with all supported GreptimeDB data types.
+// TestCrudOperations tests CREATE, INSERT, and DROP operations for both MySQL and PostgreSQL drivers.
+// Validates table creation, data insertion, and table deletion on a single table with all supported GreptimeDB data types.
 func TestCrudOperations(t *testing.T) {
 	drivers := []string{"mysql", "postgresql"}
 
