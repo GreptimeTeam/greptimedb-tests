@@ -117,18 +117,18 @@ for suite in "${TEST_SUITES[@]}"; do
             # Run the test suite
             if "$suite_dir/run_tests.sh"; then
                 echo_info "$suite tests: PASSED"
-                ((PASSED++))
+                PASSED=$((PASSED + 1))
             else
                 echo_error "$suite tests: FAILED"
-                ((FAILED++))
+                FAILED=$((FAILED + 1))
             fi
         else
             echo_warning "No run_tests.sh found in $suite_dir, skipping..."
-            ((SKIPPED++))
+            SKIPPED=$((SKIPPED + 1))
         fi
     else
         echo_warning "Directory $suite_dir does not exist, skipping..."
-        ((SKIPPED++))
+        SKIPPED=$((SKIPPED + 1))
     fi
 done
 
