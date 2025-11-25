@@ -83,7 +83,7 @@ cd "$SCRIPT_DIR"
 echo_info "Downloading Go dependencies..."
 go mod download
 
-# Run tests with verbose output (including subdirectories)
+# Run tests with verbose output
 if go test -v ./...; then
     echo_info "All tests passed successfully!"
     exit 0

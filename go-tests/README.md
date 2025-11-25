@@ -98,13 +98,13 @@ Tests validate both MySQL driver protocol and gRPC ingester protocol.
 go mod download
 
 # Run all tests
-go test -v .
+go test -v ./...
 
 # Run specific test
 go test -v -run TestCrudOperations
 
 # Run with coverage
-go test -v -cover .
+go test -v -cover ./...
 ```
 
 ## Code Formatting

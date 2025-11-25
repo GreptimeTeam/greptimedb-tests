@@ -18,6 +18,25 @@ package com.greptime.otel;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.Duration;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.slf4j.LoggerFactory;
+
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
@@ -44,27 +63,10 @@ import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.semconv.ResourceAttributes;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.Duration;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.slf4j.LoggerFactory;
 
 /**
- * Integration tests for GreptimeDB OpenTelemetry protocol compatibility. Tests Metrics, Traces,
- * and Logs ingestion via OTLP HTTP protocol.
+ * Integration tests for GreptimeDB OpenTelemetry protocol compatibility. Tests Metrics, Traces, and
+ * Logs ingestion via OTLP HTTP protocol.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class GreptimeDBOtelTest {
@@ -287,7 +289,8 @@ public class GreptimeDBOtelTest {
       LOG.info("  Verified: table {} has {} rows (expected >= {})", tableName, count, expectedMin);
     } catch (SQLException e) {
       throw new AssertionError(
-          String.format("Failed to query table %s: %s. Query: %s", tableName, e.getMessage(), query),
+          String.format(
+              "Failed to query table %s: %s. Query: %s", tableName, e.getMessage(), query),
           e);
     }
   }

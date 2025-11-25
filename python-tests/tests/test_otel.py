@@ -92,7 +92,9 @@ def get_db_connection():
     return db_connection
 
 
-def verify_table_has_data(table_name: str, where_clause: str = "", expected_min: int = 1) -> int:
+def verify_table_has_data(
+    table_name: str, where_clause: str = "", expected_min: int = 1
+) -> int:
     """
     Query the table and verify it has data.
     Returns the count of rows found.
@@ -113,12 +115,13 @@ def verify_table_has_data(table_name: str, where_clause: str = "", expected_min:
                 f"Table {table_name} has {count} rows, expected at least {expected_min}\n"
                 f"  Query: {query}"
             )
-        print(f"  Verified: table {table_name} has {count} rows (expected >= {expected_min})")
+        print(
+            f"  Verified: table {table_name} has {count} rows (expected >= {expected_min})"
+        )
         return count
     except mysql.connector.Error as e:
         raise AssertionError(
-            f"Failed to query table {table_name}: {e}\n"
-            f"  Query: {query}"
+            f"Failed to query table {table_name}: {e}\n" f"  Query: {query}"
         )
     finally:
         cursor.close()
@@ -137,11 +140,13 @@ def setup_opentelemetry():
     print(f"  Service name: {SERVICE_NAME}")
 
     # Create resource
-    resource = Resource.create({
-        "service.name": SERVICE_NAME,
-        "service.version": "1.0.0",
-        "test.run.id": TEST_RUN_ID,
-    })
+    resource = Resource.create(
+        {
+            "service.name": SERVICE_NAME,
+            "service.version": "1.0.0",
+            "test.run.id": TEST_RUN_ID,
+        }
+    )
 
     # Initialize Metrics
     metric_exporter = OTLPMetricExporter(
@@ -200,6 +205,7 @@ def setup_opentelemetry():
 
 
 # ==================== METRICS TESTS ====================
+
 
 class TestOtelMetrics:
     """Tests for OpenTelemetry Metrics."""
@@ -292,6 +298,7 @@ class TestOtelMetrics:
 
 # ==================== TRACES TESTS ====================
 
+
 class TestOtelTraces:
     """Tests for OpenTelemetry Traces."""
 
@@ -342,6 +349,7 @@ class TestOtelTraces:
 
 # ==================== LOGS TESTS ====================
 
+
 class TestOtelLogs:
     """Tests for OpenTelemetry Logs."""
 
@@ -376,7 +384,13 @@ class TestOtelLogs:
 
         py_logger.error(
             f"Test error log message - {TEST_RUN_ID}",
-            extra={"attributes": {"test.run.id": TEST_RUN_ID, "log.type": "test", "error.code": "TEST_ERROR"}},
+            extra={
+                "attributes": {
+                    "test.run.id": TEST_RUN_ID,
+                    "log.type": "test",
+                    "error.code": "TEST_ERROR",
+                }
+            },
         )
 
         # Remove handler to avoid duplicate logs
@@ -394,6 +408,7 @@ class TestOtelLogs:
 
 # ==================== COMPREHENSIVE TEST ====================
 
+
 class TestOtelComprehensive:
     """Comprehensive test combining all signals."""
 
@@ -406,6 +421,7 @@ class TestOtelComprehensive:
 
         # Setup logging handler
         import logging
+
         otel_handler = LoggingHandler(
             level=logging.DEBUG,
             logger_provider=logger_provider,

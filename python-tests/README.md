@@ -51,7 +51,7 @@ Tests are executed against both MySQL and PostgreSQL drivers using pytest parame
 
 ## Environment Variables
 
-- `DB_NAME` - Database name (default: `public`)
+- `DB_NAME` - Database name (default: `python_tests` when run via `run_tests.sh`)
 - `GREPTIME_USERNAME` - Username for authentication (default: empty)
 - `GREPTIME_PASSWORD` - Password for authentication (default: empty)
 - `MYSQL_HOST` / `MYSQL_PORT` - MySQL connection (default: `127.0.0.1:4002`)
