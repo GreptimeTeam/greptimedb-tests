@@ -11,6 +11,7 @@ greptimedb-tests/
 ├── java-tests/            # Java tests (MySQL JDBC + PostgreSQL JDBC + gRPC ingester)
 ├── python-tests/          # Python tests (mysql-connector + psycopg2)
 ├── go-tests/              # Go tests (MySQL + PostgreSQL + gRPC ingester)
+├── otel-tests/            # OpenTelemetry OTLP protocol tests (Java/Go/Python/Node.js)
 └── .github/workflows/     # CI workflows
 ```
 
@@ -55,6 +56,7 @@ export GREPTIME_PASSWORD=greptime_pwd
 cd java-tests && ./run_tests.sh
 cd python-tests && ./run_tests.sh
 cd go-tests && ./run_tests.sh
+cd otel-tests && ./run_tests.sh
 ```
 
 ## Test Suites
@@ -78,6 +80,13 @@ cd go-tests && ./run_tests.sh
 - **Coverage**: All GreptimeDB data types
 - **Docs**: [go-tests/README.md](go-tests/README.md)
 
+### OpenTelemetry Tests (`otel-tests/`)
+- **Languages**: Java, Go, Python, Node.js
+- **Protocol**: OTLP HTTP (protobuf)
+- **Signals**: Metrics (Counter/Gauge/Histogram), Traces, Logs
+- **Verification**: SQL queries via MySQL protocol
+- **Docs**: [otel-tests/README.md](otel-tests/README.md)
+
 ## Environment Variables
 
 **Authentication:**
@@ -98,6 +107,7 @@ Each test suite uses a separate database named after its directory:
 - `java-tests/` → `java_tests`
 - `python-tests/` → `python_tests`
 - `go-tests/` → `go_tests`
+- `otel-tests/` → `otel_tests_java`, `otel_tests_go`, `otel_tests_python`, `otel_tests_nodejs`
 
 **Test Discovery:**
 Root `run_tests.sh` automatically discovers and executes all test suites (directories with `run_tests.sh` or `run.sh`).
@@ -126,7 +136,7 @@ export GREPTIME_PASSWORD=pass
 3. Make executable: `chmod +x run_tests.sh`
 4. Test: `./run_tests.sh` (root runner auto-discovers)
 
-See [CLAUDE.md](CLAUDE.md) for detailed guidance.
+See existing test suites for reference.
 
 ## License
 

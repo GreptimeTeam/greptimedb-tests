@@ -23,3 +23,10 @@ psycopg2-binary>=2.9.9
 
 # Timezone handling
 pytz>=2023.3
+
+# OpenTelemetry SDK and API
+opentelemetry-api>=1.24.0
+opentelemetry-sdk>=1.24.0
+
+# OTLP HTTP Exporters
+opentelemetry-exporter-otlp-proto-http>=1.24.0

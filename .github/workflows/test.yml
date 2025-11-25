@@ -37,6 +37,11 @@ jobs:
           go-version: '1.24'
           cache-dependency-path: go-tests/go.sum
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
       - name: Install Python dependencies
         run: |
           pip install mysql-connector-python psycopg2-binary
@@ -103,6 +108,7 @@ jobs:
             java-tests/target/surefire-reports/
             python-tests/.pytest_cache/
             go-tests/*.log
+            otel-tests/nodejs/npm-debug.log
             **/test-output/
           retention-days: 7
 

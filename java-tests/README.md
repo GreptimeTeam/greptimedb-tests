@@ -1,6 +1,6 @@
 # Java Tests
 
-Integration tests for GreptimeDB using JDBC (MySQL and PostgreSQL drivers). gRPC tests planned.
+Integration tests for GreptimeDB using JDBC, gRPC Ingester, and OpenTelemetry SDK.
 
 ## Supported Data Types
 
@@ -84,7 +84,7 @@ export POSTGRES_PORT="4003"
 
 ## Test Structure
 
-**GreptimeDBJdbcTest** - JDBC integration tests
+### GreptimeDBJdbcTest - JDBC integration tests
 
 **testCrudOperations**: Comprehensive CRUD test covering all data types
 - CREATE TABLE, INSERT (literal + PreparedStatement), SELECT, UPDATE, DELETE
@@ -95,7 +95,25 @@ export POSTGRES_PORT="4003"
 **testBatchInsert**: Batch operations using PreparedStatement
 - Batch insert 5 rows with addBatch() + executeBatch()
 
-Each test runs twice - once for MySQL driver, once for PostgreSQL driver.
+Each JDBC test runs twice - once for MySQL driver, once for PostgreSQL driver.
+
+### GreptimeDBIngesterTest - gRPC Ingester tests
+
+**testIngesterInsertAndUpdate**: Write data via gRPC, verify via MySQL
+- INSERT, UPDATE (overwrite), WHERE clause queries
+
+**testIngesterBatchWrite**: Batch write 5 rows via gRPC
+- Verify all rows persisted correctly
+
+### GreptimeDBOtelTest - OpenTelemetry tests
+
+**testMetricsCounter/Gauge/Histogram**: Export metrics via OTLP HTTP
+
+**testTraces**: Export spans, verify in `opentelemetry_traces` table
+
+**testLogs**: Export logs, verify in `opentelemetry_logs` table
+
+**testAllSignalsTogether**: Combined test of all three signals
 
 ## Troubleshooting
 

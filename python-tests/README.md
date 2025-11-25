@@ -1,6 +1,6 @@
 # Python Integration Tests for GreptimeDB
 
-Integration tests for GreptimeDB using MySQL and PostgreSQL Python drivers (mysql-connector-python and psycopg2).
+Integration tests for GreptimeDB using MySQL/PostgreSQL drivers and OpenTelemetry SDK.
 
 ## Prerequisites
 
@@ -39,6 +39,16 @@ Tests are executed against both MySQL and PostgreSQL drivers using pytest parame
 - Verify batch execution results
 - Query and validate all inserted rows
 
+### OpenTelemetry Tests (test_otel.py)
+
+**test_counter/gauge/histogram**: Export metrics via OTLP HTTP
+
+**test_traces**: Export spans, verify in `opentelemetry_traces` table
+
+**test_logs**: Export logs, verify in `opentelemetry_logs` table
+
+**test_all_signals_together**: Combined test of all three signals
+
 ## Environment Variables
 
 - `DB_NAME` - Database name (default: `public`)
@@ -72,6 +82,8 @@ pytest tests/test_greptimedb_driver.py::test_crud_operations[mysql] -v
 - `pytest>=7.4.0` - Testing framework
 - `mysql-connector-python>=8.0.33` - MySQL driver
 - `psycopg2-binary>=2.9.9` - PostgreSQL driver
+- `opentelemetry-sdk>=1.24.0` - OpenTelemetry SDK
+- `opentelemetry-exporter-otlp-proto-http>=1.24.0` - OTLP HTTP exporter
 
 ## License
 

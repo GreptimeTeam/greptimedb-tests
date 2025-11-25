@@ -18,11 +18,24 @@
         <mysql.connector.version>8.0.33</mysql.connector.version>
         <postgresql.connector.version>42.7.8</postgresql.connector.version>
         <greptime.ingester.version>0.15.0</greptime.ingester.version>
+        <otel.version>1.34.1</otel.version>
         <slf4j.version>2.0.9</slf4j.version>
         <logback.version>1.4.14</logback.version>
         <spotless.version>2.43.0</spotless.version>
         <google-java-format.version>1.19.2</google-java-format.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>${otel.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- MySQL JDBC Driver -->
@@ -78,6 +91,56 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- OpenTelemetry API -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- OpenTelemetry SDK -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- OpenTelemetry SDK Metrics -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-metrics</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- OpenTelemetry SDK Trace -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-trace</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- OpenTelemetry SDK Logs -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-logs</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- OpenTelemetry OTLP Exporter -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- OpenTelemetry Semantic Conventions -->
+        <dependency>
+            <groupId>io.opentelemetry.semconv</groupId>
+            <artifactId>opentelemetry-semconv</artifactId>
+            <version>1.23.1-alpha</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

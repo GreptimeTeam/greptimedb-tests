@@ -18,9 +18,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Get database name from environment or derive from directory name
+# When run standalone: otel_tests_nodejs
+# When run from parent run_tests.sh: DB_NAME is already set
 if [ -z "$DB_NAME" ]; then
-    DIR_NAME=$(basename "$SCRIPT_DIR")
-    DB_NAME=$(echo "$DIR_NAME" | tr '-' '_')
+    LANG_NAME=$(basename "$SCRIPT_DIR")
+    DB_NAME="otel_tests_${LANG_NAME}"
 fi
 
 # Colors for output
@@ -41,23 +43,31 @@ echo_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-# Check if Go is installed
-if ! command -v go &> /dev/null; then
-    echo_error "Go is not installed. Please install Go first."
+# Check if Node.js is installed
+if ! command -v node &> /dev/null; then
+    echo_error "Node.js is not installed. Please install Node.js 18 or later."
     exit 1
 fi
 
-GO_VERSION=$(go version | awk '{print $3}')
-echo_info "Go version: $GO_VERSION"
+NODE_VERSION=$(node --version)
+echo_info "Node.js version: $NODE_VERSION"
 
-# Check if GreptimeDB is running by checking the health endpoint
+# Check if npm is installed
+if ! command -v npm &> /dev/null; then
+    echo_error "npm is not installed. Please install npm."
+    exit 1
+fi
+
+NPM_VERSION=$(npm --version)
+echo_info "npm version: $NPM_VERSION"
+
+# Configuration from environment
 MYSQL_HOST="${MYSQL_HOST:-127.0.0.1}"
 MYSQL_PORT="${MYSQL_PORT:-4002}"
-GRPC_HOST="${GRPC_HOST:-127.0.0.1}"
-GRPC_PORT="${GRPC_PORT:-4001}"
 HTTP_HOST="${HTTP_HOST:-127.0.0.1}"
 HTTP_PORT="${HTTP_PORT:-4000}"
 
+# Check if GreptimeDB is running by checking the health endpoint
 if ! curl -s "http://${HTTP_HOST}:${HTTP_PORT}/health" > /dev/null 2>&1; then
     echo_error "GreptimeDB is not running on ${HTTP_HOST}:${HTTP_PORT}"
     echo_error "Please start GreptimeDB first with:"
@@ -67,27 +77,27 @@ fi
 
 echo_info "GreptimeDB is running"
 echo_info "Using database: $DB_NAME"
+echo_info "OTLP endpoint: http://${HTTP_HOST}:${HTTP_PORT}/v1/otlp"
 
 # Set environment variables for tests
 export DB_NAME
 export MYSQL_HOST
 export MYSQL_PORT
-export GRPC_HOST
-export GRPC_PORT
+export HTTP_HOST
+export HTTP_PORT
 
-# Run Go tests
-echo_info "Running Go integration tests..."
+# Install dependencies
+echo_info "Installing Node.js dependencies..."
 cd "$SCRIPT_DIR"
+npm install --silent
 
-# Download dependencies
-echo_info "Downloading Go dependencies..."
-go mod download
+# Run Jest tests
+echo_info "Running OpenTelemetry integration tests (Node.js)..."
 
-# Run tests with verbose output (including subdirectories)
-if go test -v ./...; then
-    echo_info "All tests passed successfully!"
+if npm test; then
+    echo_info "All Node.js OpenTelemetry tests passed successfully!"
     exit 0
 else
-    echo_error "Some tests failed!"
+    echo_error "Some Node.js OpenTelemetry tests failed!"
     exit 1
 fi
