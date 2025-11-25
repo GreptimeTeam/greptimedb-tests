@@ -7,7 +7,7 @@ Multi-language integration tests for GreptimeDB. This repository contains test s
 ```
 greptimedb-tests/
 ├── run_tests.sh              # Master test runner (runs all test suites)
-├── java-jdbc-tests/          # Java JDBC integration tests
+├── java-tests/               # Java integration tests (JDBC + gRPC)
 │   ├── run_tests.sh
 │   └── src/test/java/
 └── [future test suites]      # Additional test suites for other languages
@@ -17,11 +17,44 @@ greptimedb-tests/
 
 ### Prerequisites
 - GreptimeDB instance running on localhost (default ports)
+- Python 3 with PyMySQL (for database creation)
 - Test suite specific dependencies (see individual test suite READMEs)
 
+**Install PyMySQL:**
+```bash
+pip install pymysql
+# or
+pip3 install pymysql
+```
+
 ### Start GreptimeDB
+
+**Option 1: Using Cargo (from source)**
 ```bash
 cargo run --bin greptime -- standalone start
+```
+
+**Option 2: Using Docker**
+```bash
+mkdir -p greptimedb_data
+docker run -d \
+  -p 127.0.0.1:4000-4003:4000-4003 \
+  -v "$(pwd)/greptimedb_data:/greptimedb_data" \
+  --name greptime --rm \
+  greptime/greptimedb:v1.0.0-beta.1 standalone start \
+  --http-addr 0.0.0.0:4000 \
+  --rpc-addr 0.0.0.0:4001 \
+  --mysql-addr 0.0.0.0:4002 \
+  --postgres-addr 0.0.0.0:4003
+
+# Wait for startup
+sleep 10
+
+# Check health
+curl http://localhost:4000/health
+
+# Stop when done
+docker stop greptime
 ```
 
 ### Run All Tests
@@ -33,23 +66,23 @@ This will automatically discover and run all test suites in the repository.
 
 ### Run Individual Test Suite
 ```bash
-cd java-jdbc-tests
+cd java-tests
 ./run_tests.sh
 ```
 
 ## Test Suites
 
-### Java JDBC Tests
-- **Location**: `java-jdbc-tests/`
-- **Description**: JDBC integration tests for MySQL and PostgreSQL protocols
+### Java Tests
+- **Location**: `java-tests/`
+- **Description**: JDBC integration tests (MySQL and PostgreSQL protocols). gRPC tests planned.
 - **Requirements**: Java 11+, Maven 3.6+
-- **Documentation**: See [java-jdbc-tests/README.md](java-jdbc-tests/README.md)
+- **Documentation**: See [java-tests/README.md](java-tests/README.md)
 
 ## Architecture
 
 ### Database Isolation
 Each test suite uses a separate database named after its directory:
-- `java-jdbc-tests/` → database `java_jdbc_tests`
+- `java-tests/` → database `java_tests`
 
 The root `run_tests.sh` creates the database before running each test suite.
 
@@ -66,16 +99,46 @@ Test suites support flexible configuration through environment variables.
 **Common variables:**
 - `DB_NAME` - Database name (default: derived from directory name)
 
-**Java JDBC specific:**
+**Java tests specific:**
 - `MYSQL_URL` - MySQL JDBC URL (default: `jdbc:mysql://localhost:4002/{DB_NAME}`)
 - `POSTGRES_URL` - PostgreSQL JDBC URL (default: `jdbc:postgresql://localhost:4003/{DB_NAME}`)
 - `MYSQL_PORT` - MySQL protocol port (default: `4002`)
 - `POSTGRES_PORT` - PostgreSQL protocol port (default: `4003`)
 - `HTTP_PORT` - GreptimeDB HTTP API port (default: `4000`)
 
-## CI Integration
+## GitHub Actions CI
 
-This repository is designed to be checked out during CI runs in the main GreptimeDB repository:
+This repository includes two GitHub Actions workflows:
+
+### 1. Code Format Check (`.github/workflows/format-check.yml`)
+- **Trigger**: Pull requests and pushes to main/master affecting Java files
+- **Purpose**: Validates code formatting using Spotless + Google Java Format
+- **Action**: Runs `mvn spotless:check` on Java tests
+- **Requirement**: All Java code must follow Google Java Format style
+
+### 2. Integration Tests (`.github/workflows/test.yml`)
+- **Trigger**: Pull requests and pushes to main/master
+- **Purpose**: Run full integration test suite
+- **Dependencies**:
+  - JDK 17 (Temurin distribution)
+  - Python 3 with PyMySQL (for database creation)
+  - Docker (for GreptimeDB container)
+- **Steps**:
+  1. Set up JDK 17 and install PyMySQL
+  2. Start GreptimeDB using Docker (`greptime/greptimedb:v1.0.0-beta.1`)
+  3. Wait for GreptimeDB health check to pass (up to 120 seconds)
+  4. Execute `./run_tests.sh` to run all test suites (uses `create_database.py`)
+  5. Collect container logs on failure
+  6. Upload test logs on failure
+  7. Clean up container resources
+- **Ports**: HTTP (4000), gRPC (4001), MySQL (4002), PostgreSQL (4003)
+- **Data**: Persisted to `greptimedb_data/` directory
+
+Both workflows cache Maven dependencies for faster builds.
+
+## CI Integration (External)
+
+This repository is also designed to be checked out during CI runs in the main GreptimeDB repository:
 
 1. Checkout GreptimeDB main repository
 2. Checkout this test repository (greptimedb-tests)
