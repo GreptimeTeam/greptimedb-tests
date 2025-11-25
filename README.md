@@ -108,7 +108,7 @@ Root `run_tests.sh` automatically discovers and executes all test suites (direct
 ## CI Integration
 
 ### GitHub Actions
-- **Format Check**: Java (Spotless), Python (black + flake8), Go (gofmt + golangci-lint)
+- **Format Check**: Java (Spotless), Python (black + flake8), Go (gofmt)
 - **Integration Tests**: Runs all suites with authentication in Docker
 
 ### External CI

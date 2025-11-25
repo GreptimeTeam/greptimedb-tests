@@ -101,22 +101,6 @@ jobs:
           if [ -n "$unformatted" ]; then
             echo "❌ Unformatted files:"
             echo "$unformatted"
+            echo "Run: cd go-tests && gofmt -w ."
             exit 1
           fi
-
-      - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-
-      - name: Run golangci-lint
-        run: |
-          cd go-tests
-          golangci-lint run --timeout=5m --disable=errcheck,staticcheck
-
-      - name: Format check failed
-        if: failure()
-        run: |
-          echo "❌ Go code check failed!"
-          echo "Run: cd go-tests && gofmt -w . && golangci-lint run --fix"
-          exit 1

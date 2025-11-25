@@ -74,8 +74,6 @@ export MYSQL_HOST
 export MYSQL_PORT
 export POSTGRES_HOST
 export POSTGRES_PORT
-export MYSQL_URL="${MYSQL_URL:-jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${DB_NAME}}"
-export POSTGRES_URL="${POSTGRES_URL:-jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${DB_NAME}}"
 
 # Install dependencies if needed
 if [ ! -d "$SCRIPT_DIR/.venv" ]; then

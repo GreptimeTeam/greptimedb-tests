@@ -97,7 +97,7 @@ func dropTable(t *testing.T, db *sql.DB, tableName string) {
 }
 
 // TestIngesterInsertAndUpdate tests insert and update operations using GreptimeDB Ingester SDK.
-// Verifies the data using MySQL JDBC queries.
+// Verifies the data using MySQL driver queries.
 func TestIngesterInsertAndUpdate(t *testing.T) {
 	t.Log("Starting ingester insert/update test")
 
@@ -174,7 +174,7 @@ func TestIngesterInsertAndUpdate(t *testing.T) {
 	t.Logf("Inserted 2 rows successfully, affected rows: %d", resp.GetAffectedRows().GetValue())
 
 	// Verify inserted data using MySQL
-	t.Log("Verifying inserted rows using MySQL JDBC")
+	t.Log("Verifying inserted rows using MySQL")
 	rows, err := db.Query(fmt.Sprintf("SELECT row_id, ts, int_col, double_col, float_col, string_col, bool_col, binary_col FROM %s ORDER BY row_id", tableName))
 	require.NoError(t, err)
 	defer rows.Close()
@@ -320,6 +320,7 @@ func TestIngesterBatchWrite(t *testing.T) {
 	t.Log("Starting ingester batch write test")
 
 	client := setupGreptimeClient(t)
+	defer client.Close()
 
 	db := setupMySQLConn(t)
 	defer db.Close()

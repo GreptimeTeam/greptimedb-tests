@@ -19,7 +19,7 @@ cargo run --bin greptime -- standalone start
 
 ## Test Coverage
 
-Tests validate both MySQL JDBC protocol and gRPC ingester protocol.
+Tests validate both MySQL driver protocol and gRPC ingester protocol.
 
 ### MySQL Driver Tests (driver_test.go)
 
@@ -36,33 +36,25 @@ Tests validate both MySQL JDBC protocol and gRPC ingester protocol.
 - Verify timezone-aware WHERE clause interpretation
 
 **TestBatchInsert:**
-- Batch insert 10,000 rows using prepared statements
+- Batch insert 5 rows using prepared statements
 - Verify batch execution results
 - Query and validate inserted rows
 
 ### gRPC Ingester Tests (ingester_test.go)
 
-**TestBasicWriteAndQuery:**
-- Write data using gRPC ingester
+**TestIngesterInsertAndUpdate:**
+- Write data using gRPC ingester SDK
+- INSERT two rows with various data types
 - Query via MySQL to verify data persistence
-- Validate all data types
+- UPDATE by inserting with same tag (primary key) and timestamp
+- Verify row was overwritten (not added)
+- Test WHERE clause queries
+- Validate all data types (INTEGER, DOUBLE, FLOAT, STRING, BOOLEAN, BINARY, TIMESTAMP)
 
-**TestTableOperations:**
-- Create table via gRPC
-- Insert data via gRPC
-- Query and verify via MySQL
-
-**TestBatchWrite:**
-- Write 5 CPU metric series with multiple data points
-- Verify data persistence via MySQL query
-
-**TestTimestampPrecision:**
-- Validate millisecond, microsecond, and nanosecond precision
-- Verify precision preservation in storage and retrieval
-
-**TestStreamWrite:**
-- Stream 100 rows using gRPC streaming
-- Verify all rows persisted correctly
+**TestIngesterBatchWrite:**
+- Write 5 rows in batch using gRPC ingester SDK
+- Verify all rows persisted correctly via MySQL query
+- Validate batch write operations
 
 ## Supported Data Types
 
@@ -106,12 +98,6 @@ gofmt -l .
 
 # Auto-format
 gofmt -w .
-
-# Run linter
-golangci-lint run --timeout=5m
-
-# Auto-fix lint issues
-golangci-lint run --fix
 ```
 
 ## Dependencies
