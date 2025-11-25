@@ -101,12 +101,14 @@ for test_dir in "${TEST_DIRS[@]}"; do
 
     MYSQL_HOST="${MYSQL_HOST:-127.0.0.1}"
     MYSQL_PORT="${MYSQL_PORT:-4002}"
-    if command -v mysql &> /dev/null; then
-        mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -e "CREATE DATABASE IF NOT EXISTS ${db_name};" 2>/dev/null || {
+
+    # Try to create database using Python script
+    if [ -f "$SCRIPT_DIR/create_database.py" ]; then
+        python3 "$SCRIPT_DIR/create_database.py" "$db_name" || {
             echo_warning "Failed to create database, will rely on auto-creation"
         }
     else
-        echo_warning "mysql client not found, will rely on auto-creation"
+        echo_warning "create_database.py not found, will rely on auto-creation"
     fi
 
     # Export environment variables for the test suite

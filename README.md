@@ -17,20 +17,14 @@ greptimedb-tests/
 
 ### Prerequisites
 - GreptimeDB instance running on localhost (default ports)
-- MySQL client (version 8.x recommended) for database creation
+- Python 3 with PyMySQL (for database creation)
 - Test suite specific dependencies (see individual test suite READMEs)
 
-**Install MySQL client:**
+**Install PyMySQL:**
 ```bash
-# macOS
-brew install mysql-client
-
-# Ubuntu/Debian
-sudo apt-get update
-sudo apt-get install mysql-client
-
-# Verify installation
-mysql --version
+pip install pymysql
+# or
+pip3 install pymysql
 ```
 
 ### Start GreptimeDB
@@ -127,13 +121,13 @@ This repository includes two GitHub Actions workflows:
 - **Purpose**: Run full integration test suite
 - **Dependencies**:
   - JDK 17 (Temurin distribution)
-  - MySQL Client 8.0.39 (for database creation, installed from MySQL APT repository)
+  - Python 3 with PyMySQL (for database creation)
   - Docker (for GreptimeDB container)
 - **Steps**:
-  1. Set up JDK 17 and MySQL client
+  1. Set up JDK 17 and install PyMySQL
   2. Start GreptimeDB using Docker (`greptime/greptimedb:v1.0.0-beta.1`)
   3. Wait for GreptimeDB health check to pass (up to 120 seconds)
-  4. Execute `./run_tests.sh` to run all test suites
+  4. Execute `./run_tests.sh` to run all test suites (uses `create_database.py`)
   5. Collect container logs on failure
   6. Upload test logs on failure
   7. Clean up container resources
@@ -141,37 +135,6 @@ This repository includes two GitHub Actions workflows:
 - **Data**: Persisted to `greptimedb_data/` directory
 
 Both workflows cache Maven dependencies for faster builds.
-
-### Changing MySQL Client Version
-
-To use a different MySQL client version in CI, edit `.github/workflows/test.yml` (line 40):
-
-```yaml
-# Option 1: Use specific version (recommended)
-sudo apt-get install -y mysql-client=8.0.39-1ubuntu24.04
-
-# Option 2: Use latest 8.0.x from repository
-sudo apt-get install -y mysql-client
-
-# Option 3: Use different 8.0.x version
-sudo apt-get install -y mysql-client=8.0.40-1ubuntu24.04
-```
-
-**Find available versions:**
-```bash
-# After adding MySQL APT repository:
-apt-cache policy mysql-client
-
-# List all available versions:
-apt-cache madison mysql-client | grep 8.0
-```
-
-**Common versions (Ubuntu 24.04):**
-- `8.0.39-1ubuntu24.04` - MySQL 8.0 LTS (currently used)
-- `8.0.40-1ubuntu24.04` - MySQL 8.0 LTS (latest stable)
-- `8.0.38-1ubuntu24.04` - MySQL 8.0 LTS (previous)
-
-**Note:** Version format changed to `ubuntu24.04` for GitHub Actions (ubuntu-latest = Ubuntu 24.04 Noble).
 
 ## CI Integration (External)
 

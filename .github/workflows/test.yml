@@ -22,26 +22,11 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Install MySQL Client
+      - name: Install PyMySQL
         run: |
-          # Import MySQL GPG key (fix expired key issue)
-          wget -qO - https://repo.mysql.com/RPM-GPG-KEY-mysql-2023 | \
-            sudo gpg --dearmor -o /usr/share/keyrings/mysql-archive-keyring.gpg
-
-          # Add MySQL APT repository
-          echo "deb [signed-by=/usr/share/keyrings/mysql-archive-keyring.gpg] http://repo.mysql.com/apt/ubuntu noble mysql-8.0" | \
-            sudo tee /etc/apt/sources.list.d/mysql.list
-
-          # Update package lists
-          sudo apt-get update
-
-          # Install specific MySQL client version
-          # Available versions: 8.0.35, 8.0.36, 8.0.37, 8.0.38, 8.0.39, 8.0.40, etc.
-          sudo apt-get install -y mysql-client=8.0.39-1ubuntu24.04
-
-          # Verify installation
-          mysql --version
-          echo "MySQL client installed successfully"
+          python3 -m pip install --upgrade pip
+          pip install pymysql
+          python3 -c "import pymysql; print(f'PyMySQL {pymysql.__version__} installed')"
 
       - name: Create data directory
         run: |
