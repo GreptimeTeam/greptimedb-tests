@@ -42,21 +42,17 @@ class GreptimeDBJdbcTest:
         self.connection_timezone = None
 
     def teardown(self):
-        """Close connection after each test"""
         if self.conn:
             self.conn.close()
             self.conn = None
 
     def connect(self, driver_type: str, timezone: Optional[str] = None):
-        """
-        Establish connection for the specified driver
-
-        Args:
-            driver_type: 'mysql' or 'postgresql'
-            timezone: Optional timezone setting
-        """
+        """Connect to GreptimeDB using mysql or postgresql driver."""
         self.driver = driver_type
-        self.connection_timezone = timezone if timezone else "UTC"
+        self.connection_timezone = timezone or "UTC"
+
+        username = self._get_env("GREPTIME_USERNAME", "")
+        password = self._get_env("GREPTIME_PASSWORD", "")
 
         if driver_type == "mysql":
             url = self._get_mysql_url()
@@ -66,29 +62,25 @@ class GreptimeDBJdbcTest:
                 "host": host,
                 "port": port,
                 "database": db,
-                "user": "",
-                "password": "",
+                "user": username,
+                "password": password,
                 "charset": "utf8mb4",
-                "use_pure": True,  # Use pure Python implementation
+                "use_pure": True,
             }
 
             if timezone:
                 connect_args["time_zone"] = timezone
 
-            logger.info(
-                f"Connecting to MySQL: {host}:{port}/{db} (timezone={timezone})"
-            )
+            logger.info(f"Connecting to MySQL: {host}:{port}/{db} (timezone={timezone})")
             self.conn = mysql.connector.connect(**connect_args)
 
         elif driver_type == "postgresql":
             url = self._get_postgres_url()
             host, port, db = self._parse_postgres_url(url)
 
-            logger.info(
-                f"Connecting to PostgreSQL: {host}:{port}/{db} (timezone={timezone})"
-            )
+            logger.info(f"Connecting to PostgreSQL: {host}:{port}/{db} (timezone={timezone})")
             self.conn = psycopg2.connect(
-                host=host, port=port, database=db, user="", password=""
+                host=host, port=port, database=db, user=username, password=password
             )
 
             if timezone:
@@ -101,38 +93,30 @@ class GreptimeDBJdbcTest:
         assert self.conn is not None
 
     def _get_env(self, name: str, default: str) -> str:
-        """Get environment variable with default value"""
-        value = os.environ.get(name, "").strip()
-        return value if value else default
+        return os.environ.get(name, "").strip() or default
 
     def _get_mysql_url(self) -> str:
-        """Build MySQL JDBC URL from environment variables"""
         url = os.environ.get("MYSQL_URL", "").strip()
         if url:
             return url
-
         db = self._get_env("DB_NAME", "public")
         host = self._get_env("MYSQL_HOST", "127.0.0.1")
         port = self._get_env("MYSQL_PORT", "4002")
         return f"jdbc:mysql://{host}:{port}/{db}"
 
     def _get_postgres_url(self) -> str:
-        """Build PostgreSQL JDBC URL from environment variables"""
         url = os.environ.get("POSTGRES_URL", "").strip()
         if url:
             return url
-
         db = self._get_env("DB_NAME", "public")
         host = self._get_env("POSTGRES_HOST", "127.0.0.1")
         port = self._get_env("POSTGRES_PORT", "4003")
         return f"jdbc:postgresql://{host}:{port}/{db}"
 
-    def _parse_mysql_url(self, url: str) -> tuple:
-        """Parse JDBC MySQL URL to extract host, port, database"""
-        # jdbc:mysql://host:port/db
-        url = url.replace("jdbc:mysql://", "")
-        if "?" in url:
-            url = url.split("?")[0]
+    def _parse_jdbc_url(self, url: str, default_port: int) -> tuple:
+        """Parse JDBC URL (mysql/postgresql) to extract host, port, database"""
+        url = url.split("://", 1)[1] if "://" in url else url
+        url = url.split("?")[0]  # Remove query parameters
         parts = url.split("/")
         host_port = parts[0]
         db = parts[1] if len(parts) > 1 else "public"
@@ -142,128 +126,81 @@ class GreptimeDBJdbcTest:
             port = int(port)
         else:
             host = host_port
-            port = 4002
+            port = default_port
 
         return host, port, db
+
+    def _parse_mysql_url(self, url: str) -> tuple:
+        return self._parse_jdbc_url(url, 4002)
 
     def _parse_postgres_url(self, url: str) -> tuple:
-        """Parse JDBC PostgreSQL URL to extract host, port, database"""
-        # jdbc:postgresql://host:port/db
-        url = url.replace("jdbc:postgresql://", "")
-        if "?" in url:
-            url = url.split("?")[0]
-        parts = url.split("/")
-        host_port = parts[0]
-        db = parts[1] if len(parts) > 1 else "public"
-
-        if ":" in host_port:
-            host, port = host_port.split(":")
-            port = int(port)
-        else:
-            host = host_port
-            port = 4003
-
-        return host, port, db
+        return self._parse_jdbc_url(url, 4003)
 
     def execute(self, cursor, sql: str):
-        """Execute SQL statement"""
         cursor.execute(sql)
         self.conn.commit()
 
     def table_name(self) -> str:
-        """Generate table name based on driver type"""
         return f"test_all_types_{self.driver}"
 
     def drop_table(self, table: str):
-        """Drop table if exists"""
         with self.conn.cursor() as cursor:
             cursor.execute(f"DROP TABLE IF EXISTS {table}")
         self.conn.commit()
 
     def create_table(self, table: str, schema: str):
-        """Create table with given schema"""
         with self.conn.cursor() as cursor:
             cursor.execute(f"CREATE TABLE IF NOT EXISTS {table} ({schema})")
         self.conn.commit()
 
     def format_timestamp_as_utc(self, ts) -> str:
         """
-        Format timestamp as UTC time string in 'YYYY-MM-DD HH:MM:SS.mmm' format.
-        This is used for consistent timestamp verification in timezone tests.
-
-        Note: mysql-connector-python returns naive datetime objects that are
-        already converted to the connection timezone. We need to interpret them
-        in that context before converting to UTC.
+        Format timestamp as UTC string.
+        NOTE: mysql-connector returns naive datetimes in connection timezone -
+        must localize first before converting to UTC.
         """
         if isinstance(ts, str):
             ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
 
-        # Ensure conversion to UTC
         if ts.tzinfo is None:
-            # Naive datetime from mysql-connector is in connection timezone
-            # We need to attach the connection timezone first
             if self.driver == "mysql" and self.connection_timezone:
-                # Import pytz for timezone handling
                 import pytz
-
                 try:
                     conn_tz = pytz.timezone(self.connection_timezone)
-                    # Localize the naive datetime to connection timezone
                     ts_with_tz = conn_tz.localize(ts)
-                    # Convert to UTC
                     utc_ts = ts_with_tz.astimezone(pytz.utc).replace(tzinfo=None)
                 except Exception:
-                    # Fallback: assume it's already UTC
                     utc_ts = ts
             else:
-                # For other drivers or if no timezone info, assume UTC
                 utc_ts = ts
         else:
-            # If it has timezone info, convert to UTC and remove tzinfo
             utc_ts = ts.astimezone(timezone.utc).replace(tzinfo=None)
 
         return utc_ts.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
     def get_cursor(self, prepared=False):
-        """
-        Get a cursor for executing queries.
-        For MySQL with parameterized queries, use prepared=True to enable
-        server-side prepared statements with binary protocol.
-        """
-        if self.driver == "mysql" and prepared:
-            return self.conn.cursor(prepared=True)
-        else:
-            return self.conn.cursor()
+        """Get cursor. Use prepared=True for MySQL parameterized queries."""
+        return self.conn.cursor(prepared=True) if self.driver == "mysql" and prepared else self.conn.cursor()
 
     def parse_binary_result(self, value, driver):
-        """
-        Parse binary data returned from database.
-        PostgreSQL returns binary as hex string format, need to decode it.
-        """
+        """Parse binary data. NOTE: PostgreSQL returns hex string format."""
         if driver == "postgresql":
-            # PostgreSQL returns binary as memoryview or bytes (hex string format)
             if isinstance(value, memoryview):
                 value = bytes(value)
             if isinstance(value, bytes):
-                # Check if it's hex string format like b'\\\\x0a0b0c...' (escaped)
                 try:
                     value_str = value.decode("utf-8")
-                    # PostgreSQL returns \\x prefix (double backslash)
                     if value_str.startswith("\\\\x") or value_str.startswith("\\x"):
-                        # Remove prefix and parse hex
                         hex_str = value_str.replace("\\\\x", "").replace("\\x", "")
                         return bytes.fromhex(hex_str)
                 except (UnicodeDecodeError, ValueError):
                     pass
             return value
-        else:
-            # MySQL returns binary as bytes directly
-            return value
+        return value  # MySQL returns bytes directly
 
 
 @pytest.fixture
 def test_instance():
-    """Pytest fixture to create and teardown test instance"""
     instance = GreptimeDBJdbcTest()
     yield instance
     instance.teardown()

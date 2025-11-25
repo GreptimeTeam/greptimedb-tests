@@ -1,6 +1,6 @@
 # Python Integration Tests for GreptimeDB
 
-Integration tests for GreptimeDB using MySQL and PostgreSQL Python drivers (PyMySQL and psycopg2).
+Integration tests for GreptimeDB using MySQL and PostgreSQL Python drivers (mysql-connector-python and psycopg2).
 
 ## Prerequisites
 
@@ -42,13 +42,12 @@ Tests are executed against both MySQL and PostgreSQL drivers using pytest parame
 ## Environment Variables
 
 - `DB_NAME` - Database name (default: `public`)
-- `MYSQL_URL` - Complete MySQL connection URL (optional, overrides DB_NAME)
-- `POSTGRES_URL` - Complete PostgreSQL connection URL (optional, overrides DB_NAME)
-- `MYSQL_HOST` - MySQL host (default: `127.0.0.1`)
-- `MYSQL_PORT` - MySQL port (default: `4002`)
-- `POSTGRES_HOST` - PostgreSQL host (default: `127.0.0.1`)
-- `POSTGRES_PORT` - PostgreSQL port (default: `4003`)
-- `HTTP_PORT` - GreptimeDB HTTP API port (default: `4000`)
+- `GREPTIME_USERNAME` - Username for authentication (default: empty)
+- `GREPTIME_PASSWORD` - Password for authentication (default: empty)
+- `MYSQL_URL` - Complete MySQL URL (optional, overrides DB_NAME)
+- `POSTGRES_URL` - Complete PostgreSQL URL (optional, overrides DB_NAME)
+- `MYSQL_HOST` / `MYSQL_PORT` - MySQL connection (default: `127.0.0.1:4002`)
+- `POSTGRES_HOST` / `POSTGRES_PORT` - PostgreSQL connection (default: `127.0.0.1:4003`)
 
 ## Manual Execution
 
@@ -73,7 +72,7 @@ pytest tests/test_greptimedb_jdbc.py::test_crud_operations[mysql] -v
 ## Dependencies
 
 - `pytest>=7.4.0` - Testing framework
-- `PyMySQL>=1.1.0` - MySQL driver
+- `mysql-connector-python>=8.0.33` - MySQL driver
 - `psycopg2-binary>=2.9.9` - PostgreSQL driver
 
 ## License

@@ -117,6 +117,8 @@ for test_dir in "${TEST_DIRS[@]}"; do
     export MYSQL_PORT
     export POSTGRES_HOST="${POSTGRES_HOST:-127.0.0.1}"
     export POSTGRES_PORT="${POSTGRES_PORT:-4003}"
+    export GREPTIME_USERNAME="${GREPTIME_USERNAME:-}"
+    export GREPTIME_PASSWORD="${GREPTIME_PASSWORD:-}"
 
     # Determine which script to run
     if [ -f "$test_dir/run_tests.sh" ]; then

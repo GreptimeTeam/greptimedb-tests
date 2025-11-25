@@ -30,8 +30,8 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip
-          pip install pymysql psycopg2-binary
-          python3 -c "import pymysql; print(f'PyMySQL {pymysql.__version__} installed')"
+          pip install mysql-connector-python psycopg2-binary
+          python3 -c "import mysql.connector; print(f'mysql-connector-python {mysql.connector.__version__} installed')"
           python3 -c "import psycopg2; print(f'psycopg2 {psycopg2.__version__} installed')"
 
       - name: Create data directory
@@ -48,7 +48,8 @@ jobs:
             --http-addr 0.0.0.0:4000 \
             --rpc-addr 0.0.0.0:4001 \
             --mysql-addr 0.0.0.0:4002 \
-            --postgres-addr 0.0.0.0:4003
+            --postgres-addr 0.0.0.0:4003 \
+            --user-provider=static_user_provider:cmd:greptime_user=greptime_pwd
 
           echo "GreptimeDB container started"
           docker ps
@@ -95,6 +96,8 @@ jobs:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 4003
           HTTP_PORT: 4000
+          GREPTIME_USERNAME: greptime_user
+          GREPTIME_PASSWORD: greptime_pwd
 
       - name: Collect GreptimeDB logs on failure
         if: failure()
