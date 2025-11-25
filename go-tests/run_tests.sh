@@ -41,20 +41,20 @@ echo_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-# Check if Python 3 is installed
-if ! command -v python3 &> /dev/null; then
-    echo_error "Python 3 is not installed. Please install Python 3.8 or later."
+# Check if Go is installed
+if ! command -v go &> /dev/null; then
+    echo_error "Go is not installed. Please install Go first."
     exit 1
 fi
 
-PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
-echo_info "Python version: $PYTHON_VERSION"
+GO_VERSION=$(go version | awk '{print $3}')
+echo_info "Go version: $GO_VERSION"
 
 # Check if GreptimeDB is running by checking the health endpoint
 MYSQL_HOST="${MYSQL_HOST:-127.0.0.1}"
 MYSQL_PORT="${MYSQL_PORT:-4002}"
-POSTGRES_HOST="${POSTGRES_HOST:-127.0.0.1}"
-POSTGRES_PORT="${POSTGRES_PORT:-4003}"
+GRPC_HOST="${GRPC_HOST:-127.0.0.1}"
+GRPC_PORT="${GRPC_PORT:-4001}"
 HTTP_HOST="${HTTP_HOST:-127.0.0.1}"
 HTTP_PORT="${HTTP_PORT:-4000}"
 
@@ -72,27 +72,19 @@ echo_info "Using database: $DB_NAME"
 export DB_NAME
 export MYSQL_HOST
 export MYSQL_PORT
-export POSTGRES_HOST
-export POSTGRES_PORT
+export GRPC_HOST
+export GRPC_PORT
 
-# Install dependencies if needed
-if [ ! -d "$SCRIPT_DIR/.venv" ]; then
-    echo_info "Creating virtual environment..."
-    python3 -m venv "$SCRIPT_DIR/.venv"
-fi
-
-echo_info "Activating virtual environment..."
-source "$SCRIPT_DIR/.venv/bin/activate"
-
-echo_info "Installing dependencies..."
-pip install -q --upgrade pip
-pip install -q -r "$SCRIPT_DIR/requirements.txt"
-
-# Run pytest tests
-echo_info "Running Python integration tests..."
+# Run Go tests
+echo_info "Running Go ingester integration tests..."
 cd "$SCRIPT_DIR"
 
-if pytest tests/ -v; then
+# Download dependencies
+echo_info "Downloading Go dependencies..."
+go mod download
+
+# Run tests with verbose output
+if go test -v .; then
     echo_info "All tests passed successfully!"
     exit 0
 else

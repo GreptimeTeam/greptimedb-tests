@@ -8,8 +8,9 @@ Multi-language integration tests for GreptimeDB, validating compatibility with d
 greptimedb-tests/
 ├── run_tests.sh           # Master test runner
 ├── create_database.py     # Database creation (mysql-connector-python)
-├── java-tests/            # Java JDBC tests (MySQL + PostgreSQL)
+├── java-tests/            # Java JDBC tests (MySQL + PostgreSQL + + gRPC ingester)
 ├── python-tests/          # Python tests (mysql-connector + psycopg2)
+├── go-tests/              # Go tests (MySQL + PostgreSQL + gRPC ingester)
 └── .github/workflows/     # CI workflows
 ```
 
@@ -17,9 +18,10 @@ greptimedb-tests/
 
 ### Prerequisites
 
-- GreptimeDB running on default ports (MySQL: 4002, PostgreSQL: 4003)
+- GreptimeDB running on default ports (MySQL: 4002, PostgreSQL: 4003, gRPC: 4001)
 - Python 3.8+ with `mysql-connector-python` (for database creation)
 - Java 11+ and Maven 3.6+ (for Java tests)
+- Go 1.24+ (for Go tests)
 
 ```bash
 pip install mysql-connector-python
@@ -52,6 +54,7 @@ export GREPTIME_PASSWORD=greptime_pwd
 ```bash
 cd java-tests && ./run_tests.sh
 cd python-tests && ./run_tests.sh
+cd go-tests && ./run_tests.sh
 ```
 
 ## Test Suites
@@ -67,6 +70,13 @@ cd python-tests && ./run_tests.sh
 - **Tests**: CRUD operations, timezone handling, batch inserts
 - **Framework**: pytest with parameterized tests
 - **Docs**: [python-tests/README.md](python-tests/README.md)
+
+### Go Tests (`go-tests/`)
+- **Drivers**: MySQL (go-sql-driver/mysql)
+- **Protocols**: MySQL JDBC, gRPC Ingester
+- **Tests**: CRUD operations, timezone handling, batch inserts, gRPC ingester operations
+- **Coverage**: All GreptimeDB data types
+- **Docs**: [go-tests/README.md](go-tests/README.md)
 
 ## Environment Variables
 
@@ -87,6 +97,7 @@ cd python-tests && ./run_tests.sh
 Each test suite uses a separate database named after its directory:
 - `java-tests/` → `java_tests`
 - `python-tests/` → `python_tests`
+- `go-tests/` → `go_tests`
 
 **Test Discovery:**
 Root `run_tests.sh` automatically discovers and executes all test suites (directories with `run_tests.sh` or `run.sh`).
@@ -97,7 +108,7 @@ Root `run_tests.sh` automatically discovers and executes all test suites (direct
 ## CI Integration
 
 ### GitHub Actions
-- **Format Check**: Validates Java code with Spotless + Google Java Format
+- **Format Check**: Java (Spotless), Python (black + flake8), Go (gofmt)
 - **Integration Tests**: Runs all suites with authentication in Docker
 
 ### External CI

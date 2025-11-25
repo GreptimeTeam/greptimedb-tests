@@ -44,8 +44,6 @@ Tests are executed against both MySQL and PostgreSQL drivers using pytest parame
 - `DB_NAME` - Database name (default: `public`)
 - `GREPTIME_USERNAME` - Username for authentication (default: empty)
 - `GREPTIME_PASSWORD` - Password for authentication (default: empty)
-- `MYSQL_URL` - Complete MySQL URL (optional, overrides DB_NAME)
-- `POSTGRES_URL` - Complete PostgreSQL URL (optional, overrides DB_NAME)
 - `MYSQL_HOST` / `MYSQL_PORT` - MySQL connection (default: `127.0.0.1:4002`)
 - `POSTGRES_HOST` / `POSTGRES_PORT` - PostgreSQL connection (default: `127.0.0.1:4003`)
 
@@ -63,10 +61,10 @@ pip install -r requirements.txt
 pytest tests/ -v
 
 # Run specific test
-pytest tests/test_greptimedb_jdbc.py::test_crud_operations -v
+pytest tests/test_greptimedb_driver.py::test_crud_operations -v
 
 # Run with specific driver
-pytest tests/test_greptimedb_jdbc.py::test_crud_operations[mysql] -v
+pytest tests/test_greptimedb_driver.py::test_crud_operations[mysql] -v
 ```
 
 ## Dependencies

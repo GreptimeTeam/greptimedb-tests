@@ -17,6 +17,7 @@
         <junit.version>5.10.1</junit.version>
         <mysql.connector.version>8.0.33</mysql.connector.version>
         <postgresql.connector.version>42.7.8</postgresql.connector.version>
+        <greptime.ingester.version>0.15.0</greptime.ingester.version>
         <slf4j.version>2.0.9</slf4j.version>
         <logback.version>1.4.14</logback.version>
         <spotless.version>2.43.0</spotless.version>
@@ -37,6 +38,14 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${postgresql.connector.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- GreptimeDB Java Ingester -->
+        <dependency>
+            <groupId>io.greptime</groupId>
+            <artifactId>ingester-all</artifactId>
+            <version>${greptime.ingester.version}</version>
             <scope>test</scope>
         </dependency>
 
