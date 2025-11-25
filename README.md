@@ -7,7 +7,7 @@ Multi-language integration tests for GreptimeDB. This repository contains test s
 ```
 greptimedb-tests/
 ├── run_tests.sh              # Master test runner (runs all test suites)
-├── java-jdbc-tests/          # Java JDBC integration tests
+├── java-tests/               # Java integration tests (JDBC + gRPC)
 │   ├── run_tests.sh
 │   └── src/test/java/
 └── [future test suites]      # Additional test suites for other languages
@@ -33,23 +33,23 @@ This will automatically discover and run all test suites in the repository.
 
 ### Run Individual Test Suite
 ```bash
-cd java-jdbc-tests
+cd java-tests
 ./run_tests.sh
 ```
 
 ## Test Suites
 
-### Java JDBC Tests
-- **Location**: `java-jdbc-tests/`
-- **Description**: JDBC integration tests for MySQL and PostgreSQL protocols
+### Java Tests
+- **Location**: `java-tests/`
+- **Description**: JDBC integration tests (MySQL and PostgreSQL protocols). gRPC tests planned.
 - **Requirements**: Java 11+, Maven 3.6+
-- **Documentation**: See [java-jdbc-tests/README.md](java-jdbc-tests/README.md)
+- **Documentation**: See [java-tests/README.md](java-tests/README.md)
 
 ## Architecture
 
 ### Database Isolation
 Each test suite uses a separate database named after its directory:
-- `java-jdbc-tests/` → database `java_jdbc_tests`
+- `java-tests/` → database `java_tests`
 
 The root `run_tests.sh` creates the database before running each test suite.
 
@@ -66,16 +66,38 @@ Test suites support flexible configuration through environment variables.
 **Common variables:**
 - `DB_NAME` - Database name (default: derived from directory name)
 
-**Java JDBC specific:**
+**Java tests specific:**
 - `MYSQL_URL` - MySQL JDBC URL (default: `jdbc:mysql://localhost:4002/{DB_NAME}`)
 - `POSTGRES_URL` - PostgreSQL JDBC URL (default: `jdbc:postgresql://localhost:4003/{DB_NAME}`)
 - `MYSQL_PORT` - MySQL protocol port (default: `4002`)
 - `POSTGRES_PORT` - PostgreSQL protocol port (default: `4003`)
 - `HTTP_PORT` - GreptimeDB HTTP API port (default: `4000`)
 
-## CI Integration
+## GitHub Actions CI
 
-This repository is designed to be checked out during CI runs in the main GreptimeDB repository:
+This repository includes two GitHub Actions workflows:
+
+### 1. Code Format Check (`.github/workflows/format-check.yml`)
+- **Trigger**: Pull requests and pushes to main/master affecting Java files
+- **Purpose**: Validates code formatting using Spotless + Google Java Format
+- **Action**: Runs `mvn spotless:check` on Java tests
+- **Requirement**: All Java code must follow Google Java Format style
+
+### 2. Integration Tests (`.github/workflows/test.yml`)
+- **Trigger**: Pull requests and pushes to main/master
+- **Purpose**: Run full integration test suite
+- **Steps**:
+  1. Start GreptimeDB using Docker (`greptime/greptimedb:latest`)
+  2. Wait for GreptimeDB health check to pass
+  3. Execute `./run_tests.sh` to run all test suites
+  4. Upload test logs on failure
+- **Ports**: MySQL (4002), PostgreSQL (4003), HTTP (4000), gRPC (4001)
+
+Both workflows use JDK 17 and cache Maven dependencies for faster builds.
+
+## CI Integration (External)
+
+This repository is also designed to be checked out during CI runs in the main GreptimeDB repository:
 
 1. Checkout GreptimeDB main repository
 2. Checkout this test repository (greptimedb-tests)
