@@ -127,7 +127,7 @@ This repository includes two GitHub Actions workflows:
 - **Purpose**: Run full integration test suite
 - **Dependencies**:
   - JDK 17 (Temurin distribution)
-  - MySQL Client 8.4.5 (for database creation)
+  - MySQL Client 8.0.39 (for database creation, installed from MySQL APT repository)
   - Docker (for GreptimeDB container)
 - **Steps**:
   1. Set up JDK 17 and MySQL client
@@ -141,6 +141,36 @@ This repository includes two GitHub Actions workflows:
 - **Data**: Persisted to `greptimedb_data/` directory
 
 Both workflows cache Maven dependencies for faster builds.
+
+### Changing MySQL Client Version
+
+To use a different MySQL client version in CI, edit `.github/workflows/test.yml`:
+
+```yaml
+# Option 1: Use specific version (recommended)
+sudo apt-get install -y mysql-client=8.0.39-1ubuntu22.04
+
+# Option 2: Use latest 8.0.x
+sudo apt-get install -y mysql-client
+
+# Option 3: Use latest 8.4.x (Innovation releases)
+# First, configure MySQL APT to use Innovation releases
+# Then: sudo apt-get install -y mysql-client=8.4.x-1ubuntu22.04
+```
+
+**Find available versions:**
+```bash
+# After adding MySQL APT repository:
+apt-cache policy mysql-client
+
+# List all available versions:
+apt-cache madison mysql-client
+```
+
+**Common versions:**
+- `8.0.39-1ubuntu22.04` - MySQL 8.0 LTS (stable, currently used)
+- `8.0.40-1ubuntu22.04` - MySQL 8.0 LTS (latest)
+- `8.4.3-1ubuntu22.04` - MySQL 8.4 Innovation (if available)
 
 ## CI Integration (External)
 

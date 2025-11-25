@@ -22,16 +22,21 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Set up MySQL Client
-        uses: shogo82148/actions-setup-mysql@v1
-        with:
-          mysql-version: '8.4.5'
-          auto-start: false
-
-      - name: Verify MySQL client version
+      - name: Install MySQL Client
         run: |
+          # Add MySQL APT repository for specific version support
+          wget https://dev.mysql.com/get/mysql-apt-config_0.8.30-1_all.deb
+          sudo DEBIAN_FRONTEND=noninteractive dpkg -i mysql-apt-config_0.8.30-1_all.deb
+          sudo apt-get update
+
+          # Install specific version or latest
+          # For specific version: sudo apt-get install -y mysql-client=8.0.39-1ubuntu22.04
+          # For latest 8.0: sudo apt-get install -y mysql-client
+          sudo apt-get install -y mysql-client=8.0.39-1ubuntu22.04
+
+          # Verify installation
           mysql --version
-          which mysql
+          echo "MySQL client installed successfully"
 
       - name: Create data directory
         run: |
