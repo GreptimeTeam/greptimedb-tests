@@ -111,11 +111,3 @@ jobs:
         run: |
           docker stop greptime || true
           docker rm greptime || true
-
-      - name: Test summary
-        if: always()
-        run: |
-          if [ -f java-tests/target/surefire-reports/*.xml ]; then
-            echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-            echo "✅ Tests completed. Check artifacts for details." >> $GITHUB_STEP_SUMMARY
-          fi
