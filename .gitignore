@@ -25,6 +25,20 @@ target/
 .classpath
 .project
 
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.cover
+coverage.txt
+go.work
+go.work.sum
+vendor/
+
 # IDE
 .idea/
 .vscode/

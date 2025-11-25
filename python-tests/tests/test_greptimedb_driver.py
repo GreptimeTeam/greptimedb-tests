@@ -13,8 +13,8 @@
 # limitations under the License.
 
 """
-Integration tests for GreptimeDB JDBC drivers (MySQL and PostgreSQL).
-Tests various JDBC operations including CRUD, timezone handling, and batch inserts.
+Integration tests for GreptimeDB drivers (MySQL and PostgreSQL).
+Tests various database operations including CRUD, timezone handling, and batch inserts.
 """
 
 import os
@@ -33,8 +33,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class GreptimeDBJdbcTest:
-    """Integration test suite for GreptimeDB JDBC drivers"""
+class GreptimeDBDriverTest:
+    """Integration test suite for GreptimeDB drivers"""
 
     def __init__(self):
         self.conn = None
@@ -55,8 +55,9 @@ class GreptimeDBJdbcTest:
         password = self._get_env("GREPTIME_PASSWORD", "")
 
         if driver_type == "mysql":
-            url = self._get_mysql_url()
-            host, port, db = self._parse_mysql_url(url)
+            host = self._get_env("MYSQL_HOST", "127.0.0.1")
+            port = int(self._get_env("MYSQL_PORT", "4002"))
+            db = self._get_env("DB_NAME", "public")
 
             connect_args = {
                 "host": host,
@@ -77,8 +78,9 @@ class GreptimeDBJdbcTest:
             self.conn = mysql.connector.connect(**connect_args)
 
         elif driver_type == "postgresql":
-            url = self._get_postgres_url()
-            host, port, db = self._parse_postgres_url(url)
+            host = self._get_env("POSTGRES_HOST", "127.0.0.1")
+            port = int(self._get_env("POSTGRES_PORT", "4003"))
+            db = self._get_env("DB_NAME", "public")
 
             logger.info(
                 f"Connecting to PostgreSQL: {host}:{port}/{db} (timezone={timezone})"
@@ -98,47 +100,6 @@ class GreptimeDBJdbcTest:
 
     def _get_env(self, name: str, default: str) -> str:
         return os.environ.get(name, "").strip() or default
-
-    def _get_mysql_url(self) -> str:
-        url = os.environ.get("MYSQL_URL", "").strip()
-        if url:
-            return url
-        db = self._get_env("DB_NAME", "public")
-        host = self._get_env("MYSQL_HOST", "127.0.0.1")
-        port = self._get_env("MYSQL_PORT", "4002")
-        return f"jdbc:mysql://{host}:{port}/{db}"
-
-    def _get_postgres_url(self) -> str:
-        url = os.environ.get("POSTGRES_URL", "").strip()
-        if url:
-            return url
-        db = self._get_env("DB_NAME", "public")
-        host = self._get_env("POSTGRES_HOST", "127.0.0.1")
-        port = self._get_env("POSTGRES_PORT", "4003")
-        return f"jdbc:postgresql://{host}:{port}/{db}"
-
-    def _parse_jdbc_url(self, url: str, default_port: int) -> tuple:
-        """Parse JDBC URL (mysql/postgresql) to extract host, port, database"""
-        url = url.split("://", 1)[1] if "://" in url else url
-        url = url.split("?")[0]  # Remove query parameters
-        parts = url.split("/")
-        host_port = parts[0]
-        db = parts[1] if len(parts) > 1 else "public"
-
-        if ":" in host_port:
-            host, port = host_port.split(":")
-            port = int(port)
-        else:
-            host = host_port
-            port = default_port
-
-        return host, port, db
-
-    def _parse_mysql_url(self, url: str) -> tuple:
-        return self._parse_jdbc_url(url, 4002)
-
-    def _parse_postgres_url(self, url: str) -> tuple:
-        return self._parse_jdbc_url(url, 4003)
 
     def execute(self, cursor, sql: str):
         cursor.execute(sql)
@@ -210,7 +171,7 @@ class GreptimeDBJdbcTest:
 
 @pytest.fixture
 def test_instance():
-    instance = GreptimeDBJdbcTest()
+    instance = GreptimeDBDriverTest()
     yield instance
     instance.teardown()
 

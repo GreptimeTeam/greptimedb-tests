@@ -1,0 +1,36 @@
+# golangci-lint configuration for go-tests
+# Relaxed settings for test code - focus on real bugs only
+
+version: 2
+
+linters:
+  enable:
+    - govet         # Reports suspicious constructs (real bugs)
+    - unused        # Detect unused code
+    - ineffassign   # Detect ineffectual assignments
+
+  disable:
+    - errcheck      # Don't require error checking in test code
+    - staticcheck   # Disable style suggestions for test code
+
+formatters:
+  enable:
+    - gofmt         # Basic formatting check only
+
+issues:
+  # Exclude common test code patterns
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec
+        - dupl
+        - goconst
+
+run:
+  timeout: 5m
+  tests: true
+
+output:
+  format: colored-line-number
+  print-linter-name: true

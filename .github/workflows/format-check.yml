@@ -7,12 +7,18 @@ on:
       - 'java-tests/**/*.java'
       - 'java-tests/pom.xml'
       - 'python-tests/**/*.py'
+      - 'go-tests/**/*.go'
+      - 'go-tests/go.mod'
+      - 'go-tests/go.sum'
   push:
     branches: [ main, master ]
     paths:
       - 'java-tests/**/*.java'
       - 'java-tests/pom.xml'
       - 'python-tests/**/*.py'
+      - 'go-tests/**/*.go'
+      - 'go-tests/go.mod'
+      - 'go-tests/go.sum'
 
 jobs:
   java-format-check:
@@ -39,11 +45,7 @@ jobs:
         if: failure()
         run: |
           echo "❌ Java code format check failed!"
-          echo "Please run 'mvn spotless:apply' to fix formatting issues."
-          echo ""
-          echo "To format your code:"
-          echo "  cd java-tests"
-          echo "  mvn spotless:apply"
+          echo "Run: cd java-tests && mvn spotless:apply"
           exit 1
 
   python-format-check:
@@ -60,9 +62,7 @@ jobs:
           python-version: '3.8'
 
       - name: Install formatting tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install black flake8
+        run: pip install black flake8
 
       - name: Check code format with black
         run: |
@@ -78,8 +78,45 @@ jobs:
         if: failure()
         run: |
           echo "❌ Python code format check failed!"
-          echo "Please run the following commands to fix formatting issues:"
-          echo ""
-          echo "  cd python-tests"
-          echo "  black tests/"
+          echo "Run: cd python-tests && black tests/"
+          exit 1
+
+  go-format-check:
+    name: Check Go Code Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Check code format with gofmt
+        run: |
+          cd go-tests
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "❌ Unformatted files:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Run golangci-lint
+        run: |
+          cd go-tests
+          golangci-lint run --timeout=5m
+
+      - name: Format check failed
+        if: failure()
+        run: |
+          echo "❌ Go code check failed!"
+          echo "Run: cd go-tests && gofmt -w . && golangci-lint run --fix"
           exit 1
