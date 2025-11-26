@@ -8,10 +8,10 @@ Multi-language integration tests for GreptimeDB, validating compatibility with d
 greptimedb-tests/
 ├── run_tests.sh           # Master test runner
 ├── create_database.py     # Database creation (mysql-connector-python)
-├── java-tests/            # Java tests (MySQL JDBC + PostgreSQL JDBC + gRPC ingester)
-├── python-tests/          # Python tests (mysql-connector + psycopg2)
-├── go-tests/              # Go tests (MySQL + PostgreSQL + gRPC ingester)
-├── otel-tests/            # OpenTelemetry OTLP protocol tests (Java/Go/Python/Node.js)
+├── java-tests/            # Java tests (MySQL JDBC + PostgreSQL JDBC + gRPC ingester + OLTP)
+├── python-tests/          # Python tests (mysql-connector + psycopg2 + OLTP)
+├── go-tests/              # Go tests (MySQL + PostgreSQL + gRPC ingester + OLTP)
+├── otel-tests/            # OpenTelemetry OTLP protocol tests (Node.js)
 └── .github/workflows/     # CI workflows
 ```
 
