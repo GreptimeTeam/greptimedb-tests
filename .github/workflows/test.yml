@@ -37,6 +37,11 @@ jobs:
           go-version: '1.24'
           cache-dependency-path: go-tests/go.sum
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
       - name: Install Python dependencies
         run: |
           pip install mysql-connector-python psycopg2-binary
@@ -82,10 +87,11 @@ jobs:
         run: ./run_tests.sh
         env:
           DB_NAME: test_db
-          MYSQL_HOST: localhost
+          MYSQL_HOST: 127.0.0.1
           MYSQL_PORT: 4002
-          POSTGRES_HOST: localhost
+          POSTGRES_HOST: 127.0.0.1
           POSTGRES_PORT: 4003
+          HTTP_HOST: 127.0.0.1
           HTTP_PORT: 4000
           GREPTIME_USERNAME: greptime_user
           GREPTIME_PASSWORD: greptime_pwd
@@ -103,6 +109,7 @@ jobs:
             java-tests/target/surefire-reports/
             python-tests/.pytest_cache/
             go-tests/*.log
+            otel-tests/nodejs/npm-debug.log
             **/test-output/
           retention-days: 7
 

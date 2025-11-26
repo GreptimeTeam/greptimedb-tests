@@ -39,6 +39,11 @@ go.work
 go.work.sum
 vendor/
 
+# Node.js
+node_modules/
+npm-debug.log*
+package-lock.json
+
 # IDE
 .idea/
 .vscode/

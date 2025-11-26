@@ -1,0 +1,29 @@
+{
+  "name": "greptimedb-otel-tests",
+  "version": "1.0.0",
+  "description": "OpenTelemetry integration tests for GreptimeDB",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --verbose --runInBand"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.8.0",
+    "@opentelemetry/api-logs": "^0.52.0",
+    "@opentelemetry/core": "^1.25.0",
+    "@opentelemetry/exporter-logs-otlp-proto": "^0.52.0",
+    "@opentelemetry/exporter-metrics-otlp-proto": "^0.52.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.52.0",
+    "@opentelemetry/resources": "^1.25.0",
+    "@opentelemetry/sdk-logs": "^0.52.0",
+    "@opentelemetry/sdk-metrics": "^1.25.0",
+    "@opentelemetry/sdk-trace-base": "^1.25.0",
+    "@opentelemetry/semantic-conventions": "^1.25.0",
+    "mysql2": "^3.9.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

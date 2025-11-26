@@ -56,6 +56,23 @@ Tests validate both MySQL driver protocol and gRPC ingester protocol.
 - Verify all rows persisted correctly via MySQL query
 - Validate batch write operations
 
+### OpenTelemetry Tests (otel_test.go)
+
+**TestOtelMetricsCounter/Gauge/Histogram:**
+- Export metrics via OTLP HTTP protocol
+- Counter, Gauge, Histogram instrument types
+
+**TestOtelTraces:**
+- Export parent-child spans via OTLP
+- Verify traces in `opentelemetry_traces` table
+
+**TestOtelLogs:**
+- Export logs with multiple severity levels
+- Verify logs in `opentelemetry_logs` table
+
+**TestOtelAllSignalsTogether:**
+- Combined test of all three signals
+
 ## Supported Data Types
 
 - INTEGER, DOUBLE, FLOAT
@@ -81,13 +98,13 @@ Tests validate both MySQL driver protocol and gRPC ingester protocol.
 go mod download
 
 # Run all tests
-go test -v .
+go test -v ./...
 
 # Run specific test
 go test -v -run TestCrudOperations
 
 # Run with coverage
-go test -v -cover .
+go test -v -cover ./...
 ```
 
 ## Code Formatting
@@ -105,6 +122,7 @@ gofmt -w .
 - `github.com/go-sql-driver/mysql` - MySQL driver
 - `github.com/GreptimeTeam/greptimedb-ingester-go` - gRPC ingester client
 - `github.com/stretchr/testify` - Testing utilities
+- `go.opentelemetry.io/otel` - OpenTelemetry SDK
 
 ## License
 
