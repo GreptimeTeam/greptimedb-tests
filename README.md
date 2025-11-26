@@ -8,9 +8,9 @@ Multi-language integration tests for GreptimeDB, validating compatibility with d
 greptimedb-tests/
 ├── run_tests.sh           # Master test runner
 ├── create_database.py     # Database creation (mysql-connector-python)
-├── java-tests/            # Java tests (MySQL JDBC + PostgreSQL JDBC + gRPC ingester + OLTP)
-├── python-tests/          # Python tests (mysql-connector + psycopg2 + OLTP)
-├── go-tests/              # Go tests (MySQL + PostgreSQL + gRPC ingester + OLTP)
+├── java-tests/            # Java tests (MySQL JDBC + PostgreSQL JDBC + gRPC Ingester + OTLP)
+├── python-tests/          # Python tests (mysql-connector + psycopg2 + OTLP)
+├── go-tests/              # Go tests (MySQL + PostgreSQL + gRPC Ingester + OTLP)
 ├── otel-tests/            # OpenTelemetry OTLP protocol tests (Node.js)
 └── .github/workflows/     # CI workflows
 ```
@@ -23,6 +23,7 @@ greptimedb-tests/
 - Python 3.8+ with `mysql-connector-python` (for database creation)
 - Java 11+ and Maven 3.6+ (for Java tests)
 - Go 1.24+ (for Go tests)
+- Node.js 18+ (for OpenTelemetry tests)
 
 ```bash
 pip install mysql-connector-python
@@ -62,26 +63,27 @@ cd otel-tests && ./run_tests.sh
 ## Test Suites
 
 ### Java Tests (`java-tests/`)
-- **Protocols**: MySQL JDBC, PostgreSQL JDBC, gRPC Ingester
-- **Tests**: CRUD operations, timezone handling, batch inserts, gRPC ingester operations
+- **Protocols**: MySQL JDBC, PostgreSQL JDBC, gRPC Ingester, OTLP
+- **Tests**: CRUD operations, timezone handling, batch inserts, gRPC ingester operations, OpenTelemetry signals
 - **Coverage**: All GreptimeDB data types
 - **Docs**: [java-tests/README.md](java-tests/README.md)
 
 ### Python Tests (`python-tests/`)
 - **Drivers**: mysql-connector-python, psycopg2
-- **Tests**: CRUD operations, timezone handling, batch inserts
+- **Protocols**: MySQL, PostgreSQL, OTLP
+- **Tests**: CRUD operations, timezone handling, batch inserts, OpenTelemetry signals
 - **Framework**: pytest with parameterized tests
 - **Docs**: [python-tests/README.md](python-tests/README.md)
 
 ### Go Tests (`go-tests/`)
-- **Drivers**: MySQL (go-sql-driver/mysql)
-- **Protocols**: MySQL JDBC, gRPC Ingester
-- **Tests**: CRUD operations, timezone handling, batch inserts, gRPC ingester operations
+- **Drivers**: MySQL (go-sql-driver/mysql), PostgreSQL (lib/pq)
+- **Protocols**: MySQL, PostgreSQL, gRPC Ingester, OTLP
+- **Tests**: CRUD operations, timezone handling, batch inserts, gRPC ingester operations, OpenTelemetry signals
 - **Coverage**: All GreptimeDB data types
 - **Docs**: [go-tests/README.md](go-tests/README.md)
 
 ### OpenTelemetry Tests (`otel-tests/`)
-- **Languages**: Java, Go, Python, Node.js
+- **Language**: Node.js
 - **Protocol**: OTLP HTTP (protobuf)
 - **Signals**: Metrics (Counter/Gauge/Histogram), Traces, Logs
 - **Verification**: SQL queries via MySQL protocol
@@ -107,7 +109,7 @@ Each test suite uses a separate database named after its directory:
 - `java-tests/` → `java_tests`
 - `python-tests/` → `python_tests`
 - `go-tests/` → `go_tests`
-- `otel-tests/` → `otel_tests_java`, `otel_tests_go`, `otel_tests_python`, `otel_tests_nodejs`
+- `otel-tests/` → `otel_tests_nodejs`
 
 **Test Discovery:**
 Root `run_tests.sh` automatically discovers and executes all test suites (directories with `run_tests.sh` or `run.sh`).
