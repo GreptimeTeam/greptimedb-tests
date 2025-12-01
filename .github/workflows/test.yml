@@ -9,6 +9,12 @@ on:
     # Run every Tuesday at 01:00 Beijing time (UTC+8)
     # Monday 17:00 UTC = Tuesday 01:00 CST
     - cron: '0 17 * * 1'
+  workflow_dispatch:
+    inputs:
+      greptimedb_version:
+        description: 'GreptimeDB Docker image tag'
+        required: false
+        default: 'latest'
 
 jobs:
   test:
@@ -61,7 +67,7 @@ jobs:
             -p 127.0.0.1:4000-4003:4000-4003 \
             -v "$(pwd)/greptimedb_data:/greptimedb_data" \
             --name greptime \
-            greptime/greptimedb:v1.0.0-beta.1 standalone start \
+            greptime/greptimedb:${{ inputs.greptimedb_version || 'latest' }} standalone start \
             --http-addr 0.0.0.0:4000 \
             --rpc-addr 0.0.0.0:4001 \
             --mysql-addr 0.0.0.0:4002 \
