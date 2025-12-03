@@ -294,6 +294,14 @@ public class GreptimeDBJdbcTest {
       }
 
       // DELETE
+      log.info("[{}] Testing DELETE with WHERE clause", driver);
+      try (PreparedStatement ps =
+          conn.prepareStatement("DELETE FROM " + table + " WHERE int_col > ?")) {
+        ps.setInt(1, 50);
+        var removes = ps.executeUpdate();
+        assertTrue(removes > 0);
+      }
+
       log.info("[{}] Dropping table", driver);
       dropTable(table);
       try (Statement stmt = conn.createStatement();
