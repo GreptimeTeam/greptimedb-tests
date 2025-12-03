@@ -298,7 +298,7 @@ public class GreptimeDBJdbcTest {
       try (PreparedStatement ps =
           conn.prepareStatement("DELETE FROM " + table + " WHERE int_col > ?")) {
         ps.setInt(1, 50);
-        var removes =  ps.executeUpdate();
+        var removes = ps.executeUpdate();
         assertTrue(removes > 0);
       }
 
