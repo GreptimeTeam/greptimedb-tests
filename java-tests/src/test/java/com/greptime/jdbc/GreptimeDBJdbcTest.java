@@ -19,14 +19,15 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * Integration tests for GreptimeDB JDBC drivers (MySQL and PostgreSQL). Tests various JDBC
@@ -85,7 +86,8 @@ public class GreptimeDBJdbcTest {
     assertFalse(conn.isClosed());
   }
 
-  private Connection createHikariConnection(String driverType, String url, String username, String password) throws SQLException {
+  private Connection createHikariConnection(
+      String driverType, String url, String username, String password) throws SQLException {
     HikariConfig config = new HikariConfig();
     config.setJdbcUrl(url);
     config.setUsername(username);
@@ -655,10 +657,11 @@ public class GreptimeDBJdbcTest {
             Statement stmt = pooledConn.createStatement()) {
 
           // Insert test data
-          String insertSql = String.format(
-              "INSERT INTO %s (ts, row_id, int_col, double_col, string_col, bool_col) "
-                  + "VALUES ('2024-11-24 10:%02d:00', 'pool_row_%d', %d, %f, 'Pool test %d', %s)",
-              table, i, i, i * 10, i * 1.5, i, i % 2 == 0);
+          String insertSql =
+              String.format(
+                  "INSERT INTO %s (ts, row_id, int_col, double_col, string_col, bool_col) "
+                      + "VALUES ('2024-11-24 10:%02d:00', 'pool_row_%d', %d, %f, 'Pool test %d', %s)",
+                  table, i, i, i * 10, i * 1.5, i, i % 2 == 0);
           execute(stmt, insertSql);
 
           log.info("[{}] Inserted row {} using pooled connection", driver, i);
@@ -698,11 +701,13 @@ public class GreptimeDBJdbcTest {
         }
 
         assertEquals(5, rowCount, "Should have inserted exactly 5 rows using pooled connections");
-        log.info("[{}] ✓ Verified all {} rows were inserted correctly using HikariCP", driver, rowCount);
+        log.info(
+            "[{}] ✓ Verified all {} rows were inserted correctly using HikariCP", driver, rowCount);
       }
 
       // Test pool statistics
-      log.info("[{}] Pool statistics - Active: {}, Idle: {}, Total: {}, Waiting: {}",
+      log.info(
+          "[{}] Pool statistics - Active: {}, Idle: {}, Total: {}, Waiting: {}",
           driver,
           dataSource.getHikariPoolMXBean().getActiveConnections(),
           dataSource.getHikariPoolMXBean().getIdleConnections(),
