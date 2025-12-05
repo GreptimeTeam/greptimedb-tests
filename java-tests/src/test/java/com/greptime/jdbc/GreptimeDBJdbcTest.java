@@ -345,7 +345,8 @@ public class GreptimeDBJdbcTest {
       // SELECT with timestamp - Method 2: Using individual parameters (more portable)
       log.info("[{}] Testing SELECT timestamp coercion with individual parameters", driver);
       try (PreparedStatement ps =
-          conn.prepareStatement("SELECT * FROM " + table + " WHERE timestamp_col IN (?, ?, ?) ORDER BY row_id")) {
+          conn.prepareStatement(
+              "SELECT * FROM " + table + " WHERE timestamp_col IN (?, ?, ?) ORDER BY row_id")) {
         ps.setTimestamp(1, Timestamp.valueOf("2024-11-24 10:00:00"));
         ps.setTimestamp(2, Timestamp.valueOf("2024-11-24 11:00:00"));
         ps.setTimestamp(3, Timestamp.valueOf("2024-11-24 12:00:00"));
