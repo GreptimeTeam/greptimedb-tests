@@ -26,6 +26,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 /**
  * Integration tests for GreptimeDB JDBC drivers (MySQL and PostgreSQL). Tests various JDBC
  * operations including CRUD, timezone handling, and batch inserts.
@@ -35,11 +38,15 @@ public class GreptimeDBJdbcTest {
   private static final Logger log = LoggerFactory.getLogger(GreptimeDBJdbcTest.class);
   private Connection conn;
   private String driver;
+  private HikariDataSource dataSource;
 
   @AfterEach
   void tearDown() throws SQLException {
     if (conn != null && !conn.isClosed()) {
       conn.close();
+    }
+    if (dataSource != null && !dataSource.isClosed()) {
+      dataSource.close();
     }
   }
 
@@ -48,12 +55,26 @@ public class GreptimeDBJdbcTest {
   }
 
   private void connect(String driverType, String timezone) throws SQLException {
+    connect(driverType, timezone, false);
+  }
+
+  private void connectWithPool(String driverType, String timezone) throws SQLException {
+    connect(driverType, timezone, true);
+  }
+
+  private void connect(String driverType, String timezone, boolean usePool) throws SQLException {
     this.driver = driverType;
     String url = buildUrl(driverType, timezone);
     String username = getEnv("GREPTIME_USERNAME", "");
     String password = getEnv("GREPTIME_PASSWORD", "");
-    log.info("Connecting to {} with URL: {}", driverType, url);
-    conn = DriverManager.getConnection(url, username, password);
+
+    if (usePool) {
+      log.info("Connecting to {} with HikariCP pool, URL: {}", driverType, url);
+      conn = createHikariConnection(driverType, url, username, password);
+    } else {
+      log.info("Connecting to {} with direct connection, URL: {}", driverType, url);
+      conn = DriverManager.getConnection(url, username, password);
+    }
 
     if (driverType.equals("postgresql") && timezone != null) {
       try (Statement stmt = conn.createStatement()) {
@@ -63,6 +84,34 @@ public class GreptimeDBJdbcTest {
 
     assertNotNull(conn);
     assertFalse(conn.isClosed());
+  }
+
+  private Connection createHikariConnection(
+      String driverType, String url, String username, String password) throws SQLException {
+    HikariConfig config = new HikariConfig();
+    config.setJdbcUrl(url);
+    config.setUsername(username);
+    config.setPassword(password);
+    config.setMaximumPoolSize(10);
+    config.setMinimumIdle(2);
+    config.setConnectionTimeout(30000);
+    config.setIdleTimeout(600000);
+    config.setMaxLifetime(1800000);
+    config.setLeakDetectionThreshold(60000);
+
+    // Set driver-specific properties
+    if ("mysql".equals(driverType)) {
+      config.addDataSourceProperty("cachePrepStmts", "true");
+      config.addDataSourceProperty("prepStmtCacheSize", "250");
+      config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+      config.addDataSourceProperty("useServerPrepStmts", "true");
+    } else if ("postgresql".equals(driverType)) {
+      config.addDataSourceProperty("prepareThreshold", "3");
+      config.addDataSourceProperty("preparedStatementCacheQueries", "256");
+    }
+
+    dataSource = new HikariDataSource(config);
+    return dataSource.getConnection();
   }
 
   private String buildUrl(String driverType, String timezone) {
@@ -286,6 +335,21 @@ public class GreptimeDBJdbcTest {
       try (PreparedStatement ps =
           conn.prepareStatement("SELECT * FROM " + table + " WHERE int_col > ? ORDER BY row_id")) {
         ps.setInt(1, 50);
+        try (ResultSet rs = ps.executeQuery()) {
+          int count = 0;
+          while (rs.next()) count++;
+          assertTrue(count > 0);
+        }
+      }
+
+      // SELECT with timestamp - Method 2: Using individual parameters (more portable)
+      log.info("[{}] Testing SELECT timestamp coercion with individual parameters", driver);
+      try (PreparedStatement ps =
+          conn.prepareStatement(
+              "SELECT * FROM " + table + " WHERE timestamp_col IN (?, ?, ?) ORDER BY row_id")) {
+        ps.setTimestamp(1, Timestamp.valueOf("2024-11-24 10:00:00"));
+        ps.setTimestamp(2, Timestamp.valueOf("2024-11-24 11:00:00"));
+        ps.setTimestamp(3, Timestamp.valueOf("2024-11-24 12:00:00"));
         try (ResultSet rs = ps.executeQuery()) {
           int count = 0;
           while (rs.next()) count++;
@@ -566,6 +630,113 @@ public class GreptimeDBJdbcTest {
 
     } catch (SQLException e) {
       log.error("[{}] Batch insert test failed: {}", driver, e.getMessage(), e);
+      // Cleanup on failure
+      try {
+        dropTable(table);
+      } catch (SQLException cleanupEx) {
+        log.warn("[{}] Cleanup failed: {}", driver, cleanupEx.getMessage());
+      }
+      throw e;
+    }
+  }
+
+  /**
+   * Test HikariCP connection pooling functionality. Validates that connection pooling works
+   * correctly for both MySQL and PostgreSQL drivers with proper resource management.
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"mysql", "postgresql"})
+  void testHikariConnectionPooling(String driverType) throws SQLException {
+    log.info("Starting HikariCP connection pool test for driver: {}", driverType);
+    connectWithPool(driverType, null);
+    String table = "test_hikaricp_" + driverType;
+
+    try {
+      log.info("[{}] Dropping table if exists: {}", driver, table);
+      dropTable(table);
+
+      log.info("[{}] Creating table: {}", driver, table);
+      createTable(
+          table,
+          "ts TIMESTAMP TIME INDEX, "
+              + "row_id STRING PRIMARY KEY, "
+              + "int_col INTEGER, "
+              + "double_col DOUBLE, "
+              + "string_col STRING, "
+              + "bool_col BOOLEAN");
+
+      // Test multiple connections from the pool
+      log.info("[{}] Testing multiple connections from pool", driver);
+      for (int i = 1; i <= 5; i++) {
+        try (Connection pooledConn = dataSource.getConnection();
+            Statement stmt = pooledConn.createStatement()) {
+
+          // Insert test data
+          String insertSql =
+              String.format(
+                  "INSERT INTO %s (ts, row_id, int_col, double_col, string_col, bool_col) "
+                      + "VALUES ('2024-11-24 10:%02d:00', 'pool_row_%d', %d, %f, 'Pool test %d', %s)",
+                  table, i, i, i * 10, i * 1.5, i, i % 2 == 0);
+          execute(stmt, insertSql);
+
+          log.info("[{}] Inserted row {} using pooled connection", driver, i);
+        }
+      }
+
+      // Verify all data was inserted correctly
+      log.info("[{}] Verifying all inserted data", driver);
+      try (Statement stmt = conn.createStatement();
+          ResultSet rs = stmt.executeQuery("SELECT * FROM " + table + " ORDER BY row_id")) {
+
+        int rowCount = 0;
+        while (rs.next()) {
+          rowCount++;
+          String rowId = rs.getString("row_id");
+          int intCol = rs.getInt("int_col");
+          double doubleCol = rs.getDouble("double_col");
+          String stringCol = rs.getString("string_col");
+          boolean boolCol = rs.getBoolean("bool_col");
+
+          log.info(
+              "[{}] Pool Row {}: {} | int={}, double={}, string={}, bool={}",
+              driver,
+              rowCount,
+              rowId,
+              intCol,
+              doubleCol,
+              stringCol,
+              boolCol);
+
+          // Verify data matches what we inserted
+          assertEquals("pool_row_" + rowCount, rowId);
+          assertEquals(rowCount * 10, intCol);
+          assertEquals(rowCount * 1.5, doubleCol, 0.01);
+          assertEquals("Pool test " + rowCount, stringCol);
+          assertEquals(rowCount % 2 == 0, boolCol);
+        }
+
+        assertEquals(5, rowCount, "Should have inserted exactly 5 rows using pooled connections");
+        log.info(
+            "[{}] ✓ Verified all {} rows were inserted correctly using HikariCP", driver, rowCount);
+      }
+
+      // Test pool statistics
+      log.info(
+          "[{}] Pool statistics - Active: {}, Idle: {}, Total: {}, Waiting: {}",
+          driver,
+          dataSource.getHikariPoolMXBean().getActiveConnections(),
+          dataSource.getHikariPoolMXBean().getIdleConnections(),
+          dataSource.getHikariPoolMXBean().getTotalConnections(),
+          dataSource.getHikariPoolMXBean().getThreadsAwaitingConnection());
+
+      // Cleanup
+      log.info("[{}] Dropping table", driver);
+      dropTable(table);
+
+      log.info("[{}] HikariCP connection pool test completed successfully", driver);
+
+    } catch (SQLException e) {
+      log.error("[{}] HikariCP test failed: {}", driver, e.getMessage(), e);
       // Cleanup on failure
       try {
         dropTable(table);
