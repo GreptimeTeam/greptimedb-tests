@@ -113,7 +113,8 @@ def test_adbc_postgres_crud(test_instance):
         )
 
         logger.info("Inserting rows via executemany with COPY protocol")
-        insert_sql = f"INSERT INTO {table} (ts, host, api_path, log_level, log_msg) VALUES ($1, $2, $3, $4, $5)"
+        insert_sql = f"""INSERT INTO {table} (ts, host, api_path, log_level, log_msg)
+        VALUES ($1, $2, $3, $4, $5)"""
 
         data = [
             (datetime(2024, 7, 11, 20, 2, 0), "host4", "/order", "INFO", "order ok"),
@@ -162,7 +163,8 @@ def test_adbc_postgres_crud(test_instance):
 
         logger.info("Querying via pandas.read_sql and verifying DataFrame")
         df = pd.read_sql(
-            f"SELECT ts, host, api_path, log_level, log_msg FROM {table} WHERE log_level = 'INFO' ORDER BY ts, host",
+            f"""SELECT ts, host, api_path, log_level, log_msg FROM {table}
+            WHERE log_level = 'INFO' ORDER BY ts, host""",
             test_instance.conn,
         )
 
