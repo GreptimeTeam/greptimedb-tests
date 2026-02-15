@@ -104,7 +104,7 @@ for test_dir in "${TEST_DIRS[@]}"; do
 
     # Try to create database using Python script
     if [ -f "$SCRIPT_DIR/create_database.py" ]; then
-        python3 "$SCRIPT_DIR/create_database.py" "$db_name" || {
+        uv run --with mysql-connector-python "$SCRIPT_DIR/create_database.py" "$db_name" || {
             echo_warning "Failed to create database, will rely on auto-creation"
         }
     else
