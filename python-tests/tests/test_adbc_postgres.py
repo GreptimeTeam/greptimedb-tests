@@ -183,6 +183,10 @@ def test_adbc_postgres_crud(test_instance):
         assert df.iloc[1]["log_level"] == "INFO"
         assert df.iloc[1]["log_msg"] == "cart ok"
 
+        logger.info("\n=== Arrow schema from ADBC ===")
+        schema = test_instance.conn.adbc_get_table_schema("app_logs")
+        assert len(schema) == 5
+
         logger.info("Dropping table for cleanup")
         test_instance.drop_table(table)
 
