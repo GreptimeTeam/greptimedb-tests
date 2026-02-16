@@ -102,7 +102,9 @@ for suite in "${TEST_SUITES[@]}"; do
 
             # Create database using the root create_database.py script
             if [ -f "$ROOT_DIR/create_database.py" ]; then
-                python3 "$ROOT_DIR/create_database.py" "$SUITE_DB_NAME" || true
+                uv run --with mysql-connector-python "$ROOT_DIR/create_database.py" "$SUITE_DB_NAME" || {
+                    echo_warning "Failed to create database, will rely on auto-creation"
+                }
             else
                 echo_warning "create_database.py not found, assuming database exists"
             fi
