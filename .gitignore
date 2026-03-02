@@ -5,6 +5,8 @@ __pycache__/
 *.so
 .Python
 .venv/
+.venv*/
+uv_cache/
 venv/
 ENV/
 env/

@@ -37,6 +37,11 @@ jobs:
         with:
           python-version: '3.8'
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -50,9 +55,10 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install mysql-connector-python psycopg2-binary
-          python3 -c "import mysql.connector; print(f'mysql-connector-python {mysql.connector.__version__}')"
-          python3 -c "import psycopg2; print(f'psycopg2 {psycopg2.__version__}')"
+          cd python-tests
+          uv sync
+          uv run python -c "import mysql.connector; print(f'mysql-connector-python {mysql.connector.__version__}')"
+          uv run python -c "import psycopg2; print(f'psycopg2 {psycopg2.__version__}')"
 
       - name: Install Go dependencies
         run: |

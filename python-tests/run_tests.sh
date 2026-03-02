@@ -41,14 +41,15 @@ echo_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-# Check if Python 3 is installed
-if ! command -v python3 &> /dev/null; then
-    echo_error "Python 3 is not installed. Please install Python 3.8 or later."
+# Check if uv is installed
+if ! command -v uv &> /dev/null; then
+    echo_error "uv is not installed. Please install uv first."
+    echo_error "See: https://github.com/astral-sh/uv"
     exit 1
 fi
 
-PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
-echo_info "Python version: $PYTHON_VERSION"
+UV_VERSION=$(uv --version 2>&1)
+echo_info "uv version: $UV_VERSION"
 
 # Check if GreptimeDB is running by checking the health endpoint
 MYSQL_HOST="${MYSQL_HOST:-127.0.0.1}"
@@ -75,24 +76,15 @@ export MYSQL_PORT
 export POSTGRES_HOST
 export POSTGRES_PORT
 
-# Install dependencies if needed
-if [ ! -d "$SCRIPT_DIR/.venv" ]; then
-    echo_info "Creating virtual environment..."
-    python3 -m venv "$SCRIPT_DIR/.venv"
-fi
-
-echo_info "Activating virtual environment..."
-source "$SCRIPT_DIR/.venv/bin/activate"
-
-echo_info "Installing dependencies..."
-pip install -q --upgrade pip
-pip install -q -r "$SCRIPT_DIR/requirements.txt"
+# Install dependencies
+echo_info "Installing dependencies with uv..."
+cd "$SCRIPT_DIR"
+uv sync
 
 # Run pytest tests
 echo_info "Running Python integration tests..."
-cd "$SCRIPT_DIR"
 
-if pytest tests/ -v; then
+if uv run pytest tests/ -v; then
     echo_info "All tests passed successfully!"
     exit 0
 else
