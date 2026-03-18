@@ -25,6 +25,8 @@ import pytest
 import mysql.connector
 import psycopg2
 import psycopg2.extras
+import psycopg
+from psycopg import sql
 
 # Configure logging
 logging.basicConfig(
@@ -93,6 +95,29 @@ class GreptimeDBDriverTest:
                 with self.conn.cursor() as cursor:
                     cursor.execute(f"SET TIME ZONE = '{timezone}'")
                 self.conn.commit()
+
+        elif driver_type == "postgresql3":
+            host = self._get_env("POSTGRES_HOST", "127.0.0.1")
+            port = int(self._get_env("POSTGRES_PORT", "4003"))
+            db = self._get_env("DB_NAME", "public")
+
+            logger.info(
+                f"Connecting to PostgreSQL (psycopg3): {host}:{port}/{db} (timezone={timezone})"
+            )
+            self.conn = psycopg.connect(
+                host=host,
+                port=port,
+                dbname=db,
+                user=username,
+                password=password,
+            )
+
+            if timezone:
+                with self.conn.cursor() as cursor:
+                    cursor.execute(
+                        sql.SQL("SET TIME ZONE = {}").format(sql.Literal(timezone))
+                    )
+                self.conn.commit()
         else:
             raise ValueError(f"Unknown driver: {driver_type}")
 
@@ -146,15 +171,16 @@ class GreptimeDBDriverTest:
 
     def get_cursor(self, prepared=False):
         """Get cursor. Use prepared=True for MySQL parameterized queries."""
-        return (
-            self.conn.cursor(prepared=True)
-            if self.driver == "mysql" and prepared
-            else self.conn.cursor()
-        )
+        if self.driver == "mysql" and prepared:
+            return self.conn.cursor(prepared=True)
+        elif self.driver == "postgresql3":
+            return self.conn.cursor()
+        else:
+            return self.conn.cursor()
 
     def parse_binary_result(self, value, driver):
         """Parse binary data. NOTE: PostgreSQL returns hex string format."""
-        if driver == "postgresql":
+        if driver in ("postgresql", "postgresql3"):
             if isinstance(value, memoryview):
                 value = bytes(value)
             if isinstance(value, bytes):
@@ -176,7 +202,7 @@ def test_instance():
     instance.teardown()
 
 
-@pytest.mark.parametrize("driver", ["mysql", "postgresql"])
+@pytest.mark.parametrize("driver", ["mysql", "postgresql", "postgresql3"])
 def test_crud_operations(test_instance, driver):
     """
     Test comprehensive CRUD operations on a single table with all supported GreptimeDB data types.
@@ -344,9 +370,9 @@ def test_crud_operations(test_instance, driver):
             rows = cursor.fetchall()
 
             # Should only have 2 rows total (row1 was overwritten, not added)
-            assert (
-                len(rows) == 2
-            ), f"Should have exactly 2 rows (row1 overwritten, not added), got {len(rows)}"
+            assert len(rows) == 2, (
+                f"Should have exactly 2 rows (row1 overwritten, not added), got {len(rows)}"
+            )
 
             row1 = rows[0]
             assert row1[1] == "row1"
@@ -448,25 +474,25 @@ def test_timezone_insert_and_select(test_instance, driver):
             assert rows[0][0] == "newyork_row"
             assert rows[0][2] == "America/New_York"
             ny_ts = test_instance.format_timestamp_as_utc(rows[0][1])
-            assert ny_ts.startswith(
-                "2024-01-01 17:00:00"
-            ), f"Expected UTC 17:00:00, got: {ny_ts}"
+            assert ny_ts.startswith("2024-01-01 17:00:00"), (
+                f"Expected UTC 17:00:00, got: {ny_ts}"
+            )
 
             # Shanghai: 2024-01-01 12:00:00 (local) -> 2024-01-01 04:00:00 (UTC)
             assert rows[1][0] == "shanghai_row"
             assert rows[1][2] == "Asia/Shanghai"
             shanghai_ts = test_instance.format_timestamp_as_utc(rows[1][1])
-            assert shanghai_ts.startswith(
-                "2024-01-01 04:00:00"
-            ), f"Expected UTC 04:00:00, got: {shanghai_ts}"
+            assert shanghai_ts.startswith("2024-01-01 04:00:00"), (
+                f"Expected UTC 04:00:00, got: {shanghai_ts}"
+            )
 
             # UTC: 2024-01-01 12:00:00 (local) -> 2024-01-01 12:00:00 (UTC)
             assert rows[2][0] == "utc_row"
             assert rows[2][2] == "UTC"
             utc_ts = test_instance.format_timestamp_as_utc(rows[2][1])
-            assert utc_ts.startswith(
-                "2024-01-01 12:00:00"
-            ), f"Expected UTC 12:00:00, got: {utc_ts}"
+            assert utc_ts.startswith("2024-01-01 12:00:00"), (
+                f"Expected UTC 12:00:00, got: {utc_ts}"
+            )
 
             assert len(rows) == 3
         test_instance.teardown()
@@ -477,9 +503,9 @@ def test_timezone_insert_and_select(test_instance, driver):
             cursor.execute(f"SELECT ts FROM {table} WHERE row_id = 'utc_row'")
             row = cursor.fetchone()
             ts_in_shanghai = test_instance.format_timestamp_as_utc(row[0])
-            assert ts_in_shanghai.startswith(
-                "2024-01-01 12:00:00"
-            ), f"Expected UTC 12:00:00, got: {ts_in_shanghai}"
+            assert ts_in_shanghai.startswith("2024-01-01 12:00:00"), (
+                f"Expected UTC 12:00:00, got: {ts_in_shanghai}"
+            )
         test_instance.teardown()
 
         test_instance.connect(driver, "America/New_York")
@@ -487,9 +513,9 @@ def test_timezone_insert_and_select(test_instance, driver):
             cursor.execute(f"SELECT ts FROM {table} WHERE row_id = 'utc_row'")
             row = cursor.fetchone()
             ts_in_ny = test_instance.format_timestamp_as_utc(row[0])
-            assert ts_in_ny.startswith(
-                "2024-01-01 12:00:00"
-            ), f"Expected UTC 12:00:00, got: {ts_in_ny}"
+            assert ts_in_ny.startswith("2024-01-01 12:00:00"), (
+                f"Expected UTC 12:00:00, got: {ts_in_ny}"
+            )
         test_instance.teardown()
 
         # Part 4: Verify WHERE clause interprets timestamp literals using connection timezone
@@ -530,7 +556,7 @@ def test_timezone_insert_and_select(test_instance, driver):
         raise
 
 
-@pytest.mark.parametrize("driver", ["mysql", "postgresql"])
+@pytest.mark.parametrize("driver", ["mysql", "postgresql", "postgresql3"])
 def test_batch_insert(test_instance, driver):
     """
     Test batch insert using executemany().
@@ -624,9 +650,9 @@ def test_batch_insert(test_instance, driver):
                 else:
                     assert bool_col == expected_bool
 
-            assert (
-                row_count == batch_size
-            ), f"Should have inserted exactly {batch_size} rows"
+            assert row_count == batch_size, (
+                f"Should have inserted exactly {batch_size} rows"
+            )
             logger.info(
                 f"[{driver}] ✓ Verified all {batch_size} rows were inserted correctly"
             )
