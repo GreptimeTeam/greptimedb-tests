@@ -370,9 +370,9 @@ def test_crud_operations(test_instance, driver):
             rows = cursor.fetchall()
 
             # Should only have 2 rows total (row1 was overwritten, not added)
-            assert len(rows) == 2, (
-                f"Should have exactly 2 rows (row1 overwritten, not added), got {len(rows)}"
-            )
+            assert (
+                len(rows) == 2
+            ), f"Should have exactly 2 rows (row1 overwritten, not added), got {len(rows)}"
 
             row1 = rows[0]
             assert row1[1] == "row1"
@@ -474,25 +474,25 @@ def test_timezone_insert_and_select(test_instance, driver):
             assert rows[0][0] == "newyork_row"
             assert rows[0][2] == "America/New_York"
             ny_ts = test_instance.format_timestamp_as_utc(rows[0][1])
-            assert ny_ts.startswith("2024-01-01 17:00:00"), (
-                f"Expected UTC 17:00:00, got: {ny_ts}"
-            )
+            assert ny_ts.startswith(
+                "2024-01-01 17:00:00"
+            ), f"Expected UTC 17:00:00, got: {ny_ts}"
 
             # Shanghai: 2024-01-01 12:00:00 (local) -> 2024-01-01 04:00:00 (UTC)
             assert rows[1][0] == "shanghai_row"
             assert rows[1][2] == "Asia/Shanghai"
             shanghai_ts = test_instance.format_timestamp_as_utc(rows[1][1])
-            assert shanghai_ts.startswith("2024-01-01 04:00:00"), (
-                f"Expected UTC 04:00:00, got: {shanghai_ts}"
-            )
+            assert shanghai_ts.startswith(
+                "2024-01-01 04:00:00"
+            ), f"Expected UTC 04:00:00, got: {shanghai_ts}"
 
             # UTC: 2024-01-01 12:00:00 (local) -> 2024-01-01 12:00:00 (UTC)
             assert rows[2][0] == "utc_row"
             assert rows[2][2] == "UTC"
             utc_ts = test_instance.format_timestamp_as_utc(rows[2][1])
-            assert utc_ts.startswith("2024-01-01 12:00:00"), (
-                f"Expected UTC 12:00:00, got: {utc_ts}"
-            )
+            assert utc_ts.startswith(
+                "2024-01-01 12:00:00"
+            ), f"Expected UTC 12:00:00, got: {utc_ts}"
 
             assert len(rows) == 3
         test_instance.teardown()
@@ -503,9 +503,9 @@ def test_timezone_insert_and_select(test_instance, driver):
             cursor.execute(f"SELECT ts FROM {table} WHERE row_id = 'utc_row'")
             row = cursor.fetchone()
             ts_in_shanghai = test_instance.format_timestamp_as_utc(row[0])
-            assert ts_in_shanghai.startswith("2024-01-01 12:00:00"), (
-                f"Expected UTC 12:00:00, got: {ts_in_shanghai}"
-            )
+            assert ts_in_shanghai.startswith(
+                "2024-01-01 12:00:00"
+            ), f"Expected UTC 12:00:00, got: {ts_in_shanghai}"
         test_instance.teardown()
 
         test_instance.connect(driver, "America/New_York")
@@ -513,9 +513,9 @@ def test_timezone_insert_and_select(test_instance, driver):
             cursor.execute(f"SELECT ts FROM {table} WHERE row_id = 'utc_row'")
             row = cursor.fetchone()
             ts_in_ny = test_instance.format_timestamp_as_utc(row[0])
-            assert ts_in_ny.startswith("2024-01-01 12:00:00"), (
-                f"Expected UTC 12:00:00, got: {ts_in_ny}"
-            )
+            assert ts_in_ny.startswith(
+                "2024-01-01 12:00:00"
+            ), f"Expected UTC 12:00:00, got: {ts_in_ny}"
         test_instance.teardown()
 
         # Part 4: Verify WHERE clause interprets timestamp literals using connection timezone
@@ -650,9 +650,9 @@ def test_batch_insert(test_instance, driver):
                 else:
                     assert bool_col == expected_bool
 
-            assert row_count == batch_size, (
-                f"Should have inserted exactly {batch_size} rows"
-            )
+            assert (
+                row_count == batch_size
+            ), f"Should have inserted exactly {batch_size} rows"
             logger.info(
                 f"[{driver}] ✓ Verified all {batch_size} rows were inserted correctly"
             )
