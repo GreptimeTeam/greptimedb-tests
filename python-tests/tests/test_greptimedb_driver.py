@@ -25,6 +25,8 @@ import pytest
 import mysql.connector
 import psycopg2
 import psycopg2.extras
+import psycopg
+from psycopg import sql
 
 # Configure logging
 logging.basicConfig(
@@ -93,6 +95,29 @@ class GreptimeDBDriverTest:
                 with self.conn.cursor() as cursor:
                     cursor.execute(f"SET TIME ZONE = '{timezone}'")
                 self.conn.commit()
+
+        elif driver_type == "postgresql3":
+            host = self._get_env("POSTGRES_HOST", "127.0.0.1")
+            port = int(self._get_env("POSTGRES_PORT", "4003"))
+            db = self._get_env("DB_NAME", "public")
+
+            logger.info(
+                f"Connecting to PostgreSQL (psycopg3): {host}:{port}/{db} (timezone={timezone})"
+            )
+            self.conn = psycopg.connect(
+                host=host,
+                port=port,
+                dbname=db,
+                user=username,
+                password=password,
+            )
+
+            if timezone:
+                with self.conn.cursor() as cursor:
+                    cursor.execute(
+                        sql.SQL("SET TIME ZONE = {}").format(sql.Literal(timezone))
+                    )
+                self.conn.commit()
         else:
             raise ValueError(f"Unknown driver: {driver_type}")
 
@@ -146,15 +171,16 @@ class GreptimeDBDriverTest:
 
     def get_cursor(self, prepared=False):
         """Get cursor. Use prepared=True for MySQL parameterized queries."""
-        return (
-            self.conn.cursor(prepared=True)
-            if self.driver == "mysql" and prepared
-            else self.conn.cursor()
-        )
+        if self.driver == "mysql" and prepared:
+            return self.conn.cursor(prepared=True)
+        elif self.driver == "postgresql3":
+            return self.conn.cursor()
+        else:
+            return self.conn.cursor()
 
     def parse_binary_result(self, value, driver):
         """Parse binary data. NOTE: PostgreSQL returns hex string format."""
-        if driver == "postgresql":
+        if driver in ("postgresql", "postgresql3"):
             if isinstance(value, memoryview):
                 value = bytes(value)
             if isinstance(value, bytes):
@@ -176,7 +202,7 @@ def test_instance():
     instance.teardown()
 
 
-@pytest.mark.parametrize("driver", ["mysql", "postgresql"])
+@pytest.mark.parametrize("driver", ["mysql", "postgresql", "postgresql3"])
 def test_crud_operations(test_instance, driver):
     """
     Test comprehensive CRUD operations on a single table with all supported GreptimeDB data types.
@@ -530,7 +556,7 @@ def test_timezone_insert_and_select(test_instance, driver):
         raise
 
 
-@pytest.mark.parametrize("driver", ["mysql", "postgresql"])
+@pytest.mark.parametrize("driver", ["mysql", "postgresql", "postgresql3"])
 def test_batch_insert(test_instance, driver):
     """
     Test batch insert using executemany().
