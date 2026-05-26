@@ -201,6 +201,65 @@ func TestCrudOperations(t *testing.T) {
 	}
 }
 
+func TestMySQLPreparedUnknownPlaceholders(t *testing.T) {
+	db := connectDriver(t, "mysql", "")
+	defer db.Close()
+
+	queryOneString := func(query string, args ...any) string {
+		stmt, err := db.Prepare(query)
+		require.NoError(t, err)
+		defer stmt.Close()
+
+		var got string
+		require.NoError(t, stmt.QueryRow(args...).Scan(&got))
+		return got
+	}
+
+	assert.Equal(t, "can't", queryOneString("SELECT ?", "can't"))
+	assert.Equal(t, "limited", queryOneString("SELECT ? LIMIT ?", "limited", 1))
+
+	stmt, err := db.Prepare("SELECT ?, ?")
+	require.NoError(t, err)
+	var first, second string
+	require.NoError(t, stmt.QueryRow("keep $2", "second").Scan(&first, &second))
+	assert.Equal(t, "keep $2", first)
+	assert.Equal(t, "second", second)
+	require.NoError(t, stmt.Close())
+
+	stmt, err = db.Prepare("SELECT '?', ?")
+	require.NoError(t, err)
+	require.NoError(t, stmt.QueryRow("actual").Scan(&first, &second))
+	assert.Equal(t, "?", first)
+	assert.Equal(t, "actual", second)
+	require.NoError(t, stmt.Close())
+
+	assert.Equal(t, "commented", queryOneString("SELECT /* ? */ ? -- ?\n", "commented"))
+
+	stmt, err = db.Prepare("SELECT '中文', ?")
+	require.NoError(t, err)
+	require.NoError(t, stmt.QueryRow("actual").Scan(&first, &second))
+	assert.Equal(t, "中文", first)
+	assert.Equal(t, "actual", second)
+	require.NoError(t, stmt.Close())
+
+	stmt, err = db.Prepare("SELECT ?")
+	require.NoError(t, err)
+	var nullable sql.NullString
+	require.NoError(t, stmt.QueryRow(nil).Scan(&nullable))
+	assert.False(t, nullable.Valid)
+	require.NoError(t, stmt.Close())
+
+	stmt, err = db.Prepare("SELECT ?")
+	require.NoError(t, err)
+	var binary []byte
+	require.NoError(t, stmt.QueryRow([]byte{0xff, 0xfe}).Scan(&binary))
+	assert.Equal(t, []byte{0xff, 0xfe}, binary)
+	require.NoError(t, stmt.Close())
+
+	_, err = db.Exec("SET time_zone = ?", "UTC")
+	require.NoError(t, err)
+}
+
 // connectDriver connects to GreptimeDB using the specified driver and timezone
 func connectDriver(t *testing.T, driver, timezone string) *sql.DB {
 	username := getEnv("GREPTIME_USERNAME", "")
