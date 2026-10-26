@@ -39,6 +39,25 @@ Tests are executed against both MySQL and PostgreSQL drivers using pytest parame
 - Verify batch execution results
 - Query and validate all inserted rows
 
+### PostgreSQL COPY FROM STDIN Tests (test_postgres_copy_in.py)
+
+PostgreSQL `COPY ... FROM STDIN` (the copy-in sub-protocol, greptimedb#9297),
+parameterized over both `psycopg2` and `psycopg3`:
+
+- Basic CSV copy: NULL from an unquoted empty field, quoted commas, escaped quotes
+- Column lists: subset/reorder, time-index requirement
+- CSV options: HEADER, custom DELIMITER, CRLF separators, multi-line quoted fields
+- Empty fields (quoted or not) import as NULL
+- Boolean spellings (`t`/`f`, `yes`/`no`, `on`/`off`, ...) round-trip with COPY OUT
+- Large batches crossing the server's 32768-row flush boundary
+- Session-timezone parity between COPY and INSERT for naive timestamps
+- Error handling: missing format, text/binary formats, unknown tables/options,
+  bad data keeps the table clean, connection reuse after failure
+- COPY OUT → COPY IN round trip
+
+> NOTE: GreptimeDB currently implements only `WITH (FORMAT csv)`; the
+> default PostgreSQL text/binary copy formats are rejected with guidance.
+
 ### OpenTelemetry Tests (test_otel.py)
 
 **test_counter/gauge/histogram**: Export metrics via OTLP HTTP

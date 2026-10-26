@@ -63,22 +63,22 @@ cd otel-tests && ./run_tests.sh
 ## Test Suites
 
 ### Java Tests (`java-tests/`)
-- **Protocols**: MySQL JDBC, PostgreSQL JDBC, gRPC Ingester, OTLP
+- **Protocols**: MySQL JDBC, PostgreSQL JDBC (incl. COPY FROM STDIN via CopyManager), gRPC Ingester, OTLP
 - **Tests**: CRUD operations, timezone handling, batch inserts, gRPC ingester operations, OpenTelemetry signals
 - **Coverage**: All GreptimeDB data types
 - **Docs**: [java-tests/README.md](java-tests/README.md)
 
 ### Python Tests (`python-tests/`)
-- **Drivers**: mysql-connector-python, psycopg2
+- **Drivers**: mysql-connector-python, psycopg2, psycopg3
 - **Protocols**: MySQL, PostgreSQL, OTLP
-- **Tests**: CRUD operations, timezone handling, batch inserts, OpenTelemetry signals
+- **Tests**: CRUD operations, timezone handling, batch inserts, PostgreSQL COPY FROM STDIN, OpenTelemetry signals
 - **Framework**: pytest with parameterized tests
 - **Docs**: [python-tests/README.md](python-tests/README.md)
 
 ### Go Tests (`go-tests/`)
 - **Drivers**: MySQL (go-sql-driver/mysql), PostgreSQL (lib/pq)
 - **Protocols**: MySQL, PostgreSQL, gRPC Ingester, OTLP
-- **Tests**: CRUD operations, timezone handling, batch inserts, gRPC ingester operations, OpenTelemetry signals
+- **Tests**: CRUD operations, timezone handling, batch inserts, gRPC ingester operations, PostgreSQL COPY FROM STDIN, OpenTelemetry signals
 - **Coverage**: All GreptimeDB data types
 - **Docs**: [go-tests/README.md](go-tests/README.md)
 

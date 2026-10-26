@@ -40,6 +40,27 @@ Tests validate both MySQL driver protocol and gRPC ingester protocol.
 - Verify batch execution results
 - Query and validate inserted rows
 
+### PostgreSQL COPY FROM STDIN Tests (copy_in_test.go)
+
+**TestPostgresCopyInCsv:**
+- `COPY ... FROM STDIN WITH (FORMAT csv)` through `lib/pq`'s copy-in path
+  (`tx.Prepare` with a `COPY` statement, rows streamed via `stmt.Exec`)
+- Verifies data written and large batches crossing the server's
+  32768-row flush boundary
+
+**TestPostgresCopyInStatementRejections:**
+- `pq.CopyIn(...)` (bare COPY, no format) rejected with guidance
+- text/binary formats, unknown tables, unknown options, multi-statement,
+  and missing time-index column list all rejected
+
+**TestPostgresCopyInBadDataKeepsTableClean:**
+- Bad data aborts the copy, nothing is written, connection stays usable
+
+> NOTE: `lib/pq` streams rows in the PostgreSQL text style (tab-delimited,
+> `\N` NULLs), so the tests declare `DELIMITER E'\t'` and avoid NULLs and
+> special characters in streamed rows. GreptimeDB currently implements
+> only `WITH (FORMAT csv)` (greptimedb#9297).
+
 ### gRPC Ingester Tests (ingester_test.go)
 
 **TestIngesterInsertAndUpdate:**
