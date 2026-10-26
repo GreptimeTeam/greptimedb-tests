@@ -9,6 +9,26 @@ Integration tests for GreptimeDB using JDBC, gRPC Ingester, and OpenTelemetry SD
 - TIMESTAMP, DATE
 - BINARY, BOOLEAN
 
+## Test Coverage
+
+### GreptimeDBJdbcTest
+
+CRUD, timezone handling, and batch inserts via MySQL and PostgreSQL JDBC drivers.
+
+### GreptimeDBPostgresCopyInTest (PostgreSQL only)
+
+PostgreSQL `COPY ... FROM STDIN` (the copy-in sub-protocol, greptimedb#9297)
+via the PostgreSQL JDBC driver's `CopyManager`:
+
+- Basic CSV copy: NULL from an unquoted empty field, quoted commas, escaped quotes
+- Column lists: subset/reorder, time-index requirement
+- CSV options: HEADER, custom DELIMITER, CRLF separators, multi-line quoted fields
+- Large batches crossing the server's 32768-row flush boundary
+- Session-timezone parity between COPY and INSERT for naive timestamps
+- Error handling: missing format, text/binary formats, unknown tables/options,
+  bad data keeps the table clean, connection reuse after failure
+- COPY OUT → COPY IN round trip (t/f booleans, offset-bearing timestamps)
+
 ## Running Tests
 
 ### Prerequisites
